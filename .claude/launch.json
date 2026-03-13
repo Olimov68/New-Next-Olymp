@@ -1,0 +1,37 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "nextjs-frontend",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js", "next", "dev"],
+      "port": 3000,
+      "autoPort": false,
+      "cwd": "frontend"
+    },
+    {
+      "name": "frontend",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js", "next", "dev"],
+      "port": 3000,
+      "autoPort": false,
+      "cwd": "frontend"
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js", "tsx", "watch", "src/index.ts"],
+      "port": 5000,
+      "autoPort": false,
+      "cwd": "backend"
+    },
+    {
+      "name": "go-backend-api",
+      "runtimeExecutable": "go",
+      "runtimeArgs": ["run", "./cmd/api/main.go"],
+      "port": 8080,
+      "autoPort": false,
+      "cwd": "go-backend"
+    }
+  ]
+}

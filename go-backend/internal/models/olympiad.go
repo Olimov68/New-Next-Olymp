@@ -1,0 +1,55 @@
+package models
+
+import "time"
+
+type OlympiadStatus string
+
+const (
+	OlympiadStatusDraft     OlympiadStatus = "draft"
+	OlympiadStatusPublished OlympiadStatus = "published"
+	OlympiadStatusActive    OlympiadStatus = "active"
+	OlympiadStatusEnded     OlympiadStatus = "ended"
+	OlympiadStatusArchived  OlympiadStatus = "archived"
+)
+
+type OlympiadRegistrationStatus string
+
+const (
+	OlympiadRegStatusRegistered  OlympiadRegistrationStatus = "registered"
+	OlympiadRegStatusParticipant OlympiadRegistrationStatus = "participant"
+	OlympiadRegStatusCompleted   OlympiadRegistrationStatus = "completed"
+	OlympiadRegStatusCancelled   OlympiadRegistrationStatus = "cancelled"
+)
+
+type Olympiad struct {
+	ID             uint           `gorm:"primaryKey" json:"id"`
+	Title          string         `gorm:"size:300;not null" json:"title"`
+	Slug           string         `gorm:"uniqueIndex;size:300;not null" json:"slug"`
+	Description    string         `gorm:"type:text" json:"description"`
+	Subject        string         `gorm:"size:100" json:"subject"`
+	Grade          int            `gorm:"default:0" json:"grade"`
+	Language       string         `gorm:"size:20;default:uz" json:"language"`
+	StartTime      *time.Time     `json:"start_time,omitempty"`
+	EndTime        *time.Time     `json:"end_time,omitempty"`
+	DurationMins   int            `gorm:"default:60" json:"duration_minutes"`
+	TotalQuestions int            `gorm:"default:0" json:"total_questions"`
+	Rules          string         `gorm:"type:text" json:"rules"`
+	Status         OlympiadStatus `gorm:"size:20;default:draft;not null" json:"status"`
+	IsPaid         bool           `gorm:"default:false;not null" json:"is_paid"`
+	Price          *float64       `json:"price,omitempty"`
+	CreatedByID    *uint          `gorm:"index" json:"created_by_id,omitempty"`
+	CreatedAt      time.Time      `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt      time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+type OlympiadRegistration struct {
+	ID          uint                       `gorm:"primaryKey" json:"id"`
+	UserID      uint                       `gorm:"not null;index" json:"user_id"`
+	OlympiadID  uint                       `gorm:"not null;index" json:"olympiad_id"`
+	Status      OlympiadRegistrationStatus `gorm:"size:20;default:registered;not null" json:"status"`
+	JoinedAt    time.Time                  `gorm:"autoCreateTime" json:"joined_at"`
+	UpdatedAt   time.Time                  `gorm:"autoUpdateTime" json:"updated_at"`
+
+	User     *User     `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Olympiad *Olympiad `gorm:"foreignKey:OlympiadID" json:"olympiad,omitempty"`
+}

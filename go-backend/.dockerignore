@@ -1,0 +1,9 @@
+.env
+.env.local
+.git
+.gitignore
+.claude
+*.md
+uploads/*
+tmp/
+vendor/
