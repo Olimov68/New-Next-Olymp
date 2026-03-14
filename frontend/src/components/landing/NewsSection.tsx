@@ -1,0 +1,63 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { fetchNews } from "@/lib/api";
+import { useI18n } from "@/lib/i18n";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRight, Calendar } from "lucide-react";
+import Link from "next/link";
+
+export function NewsSection() {
+  const { data: news, isLoading } = useQuery({
+    queryKey: ["news"],
+    queryFn: fetchNews,
+  });
+  const { t, lang } = useI18n();
+
+  if (isLoading) return null;
+  if (!news?.length) return null;
+
+  const localeMap = { uz: "uz-UZ", ru: "ru-RU", en: "en-US" };
+
+  return (
+    <section id="news" className="relative py-20 overflow-hidden bg-background border-t border-border">
+      <div className="pointer-events-none absolute bottom-10 right-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl" aria-hidden />
+      <div className="container mx-auto px-4 relative">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-4">
+            📰 {t("nav.news")}
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{t("news.title")}</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">{t("news.desc")}</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {news.map((n) => (
+            <Link key={n.id} href={`/news/${n.id}`}>
+              <Card className="group hover:-translate-y-1 transition-all duration-300 border border-border bg-card backdrop-blur-sm shadow-none rounded-2xl overflow-hidden hover:bg-accent hover:border-green-400/20 cursor-pointer h-full">
+                {n.image && (
+                  <div className="h-48 bg-gradient-to-br from-blue-500/10 to-indigo-500/10" />
+                )}
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(n.created_at).toLocaleDateString(localeMap[lang] || "uz-UZ", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </div>
+                  <h3 className="font-semibold text-foreground mb-2">{n.title}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-3">{n.description}</p>
+                  <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-400 group-hover:text-blue-300 transition-colors">
+                    {t("news.read_more")} <ArrowRight className="h-3 w-3" />
+                  </span>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

@@ -1,0 +1,12 @@
+.env
+uploads/*
+!uploads/.gitkeep
+tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
