@@ -36,3 +36,6 @@ type LoginAttempt struct {
 	UserType  string    `gorm:"size:20;not null" json:"user_type"` // user | staff
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
+
+func (Session) TableName() string { return "session" }
+func (LoginAttempt) TableName() string { return "login_attempt" }

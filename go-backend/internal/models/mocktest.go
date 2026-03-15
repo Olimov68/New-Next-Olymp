@@ -50,3 +50,6 @@ type MockTestRegistration struct {
 	User     *User     `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	MockTest *MockTest `gorm:"foreignKey:MockTestID" json:"mock_test,omitempty"`
 }
+
+func (MockTest) TableName() string { return "mock_test" }
+func (MockTestRegistration) TableName() string { return "mock_test_registration" }

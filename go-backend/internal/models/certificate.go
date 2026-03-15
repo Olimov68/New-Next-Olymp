@@ -23,3 +23,5 @@ type Certificate struct {
 
 	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
+
+func (Certificate) TableName() string { return "certificate" }

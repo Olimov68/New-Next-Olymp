@@ -53,3 +53,6 @@ type OlympiadRegistration struct {
 	User     *User     `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Olympiad *Olympiad `gorm:"foreignKey:OlympiadID" json:"olympiad,omitempty"`
 }
+
+func (Olympiad) TableName() string { return "olympiad" }
+func (OlympiadRegistration) TableName() string { return "olympiad_registration" }

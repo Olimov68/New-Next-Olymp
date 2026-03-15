@@ -19,3 +19,5 @@ type Notification struct {
 	// Relations
 	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
+
+func (Notification) TableName() string { return "notification" }

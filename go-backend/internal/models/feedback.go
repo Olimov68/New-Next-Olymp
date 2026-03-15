@@ -26,3 +26,5 @@ type Feedback struct {
 
 	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
+
+func (Feedback) TableName() string { return "feedback" }

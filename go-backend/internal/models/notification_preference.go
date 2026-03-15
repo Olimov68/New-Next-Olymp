@@ -60,3 +60,5 @@ var NotificationTypeToCategory = map[string]string{
 	"welcome":   "system",
 	"new_login": "system",
 }
+
+func (NotificationPreference) TableName() string { return "notification_preference" }
