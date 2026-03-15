@@ -24,3 +24,6 @@ type StaffPermission struct {
 	StaffUser  *StaffUser  `gorm:"foreignKey:StaffUserID" json:"staff_user,omitempty"`
 	Permission *Permission `gorm:"foreignKey:PermissionID" json:"permission,omitempty"`
 }
+
+func (Permission) TableName() string { return "permission" }
+func (StaffPermission) TableName() string { return "staff_permission" }

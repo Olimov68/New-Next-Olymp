@@ -32,3 +32,6 @@ type BalanceTransaction struct {
 	// Relations
 	User *User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
+
+func (Balance) TableName() string { return "balance" }
+func (BalanceTransaction) TableName() string { return "balance_transaction" }

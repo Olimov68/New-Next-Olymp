@@ -39,3 +39,6 @@ type OlympiadAttemptAnswer struct {
 	Question       *Question       `gorm:"foreignKey:QuestionID" json:"question,omitempty"`
 	SelectedOption *QuestionOption `gorm:"foreignKey:SelectedOptionID" json:"selected_option,omitempty"`
 }
+
+func (OlympiadAttempt) TableName() string { return "olympiad_attempt" }
+func (OlympiadAttemptAnswer) TableName() string { return "olympiad_attempt_answer" }

@@ -31,3 +31,6 @@ type QuestionOption struct {
 	OrderNum   int       `gorm:"default:0;not null" json:"order_num"`
 	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
+
+func (Question) TableName() string { return "question" }
+func (QuestionOption) TableName() string { return "question_option" }

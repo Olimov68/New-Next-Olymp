@@ -15,3 +15,5 @@ type TelegramCode struct {
 	Used             bool      `gorm:"default:false;not null" json:"used"`
 	CreatedAt        time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
+
+func (TelegramCode) TableName() string { return "telegram_code" }

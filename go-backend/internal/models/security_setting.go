@@ -15,3 +15,5 @@ type SecuritySetting struct {
 	RiskThreshold          float64   `gorm:"default:0.7;not null" json:"risk_threshold"`
 	UpdatedAt              time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
+
+func (SecuritySetting) TableName() string { return "security_setting" }

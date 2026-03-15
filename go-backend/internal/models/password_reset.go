@@ -14,3 +14,5 @@ type PasswordResetCode struct {
 	Verified  bool      `gorm:"default:false;not null" json:"verified"` // kod tasdiqlandi, parol o'zgartirishga ruxsat
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
+
+func (PasswordResetCode) TableName() string { return "password_reset_code" }

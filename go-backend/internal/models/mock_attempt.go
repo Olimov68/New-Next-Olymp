@@ -93,3 +93,7 @@ type MockAttemptAnswer struct {
 	Question       *Question       `gorm:"foreignKey:QuestionID" json:"question,omitempty"`
 	SelectedOption *QuestionOption `gorm:"foreignKey:SelectedOptionID" json:"selected_option,omitempty"`
 }
+
+func (MockAttempt) TableName() string { return "mock_attempt" }
+func (MockTestQuestionStat) TableName() string { return "mock_test_question_stat" }
+func (MockAttemptAnswer) TableName() string { return "mock_attempt_answer" }

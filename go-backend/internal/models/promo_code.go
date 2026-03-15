@@ -53,3 +53,6 @@ type PromoCodeUsage struct {
 	User      *User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Payment   *Payment   `gorm:"foreignKey:PaymentID" json:"payment,omitempty"`
 }
+
+func (PromoCode) TableName() string { return "promo_code" }
+func (PromoCodeUsage) TableName() string { return "promo_code_usage" }

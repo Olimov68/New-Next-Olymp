@@ -12,3 +12,5 @@ type GlobalSetting struct {
 	RegistrationEnabled bool      `gorm:"default:true;not null" json:"registration_enabled"`
 	UpdatedAt           time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
+
+func (GlobalSetting) TableName() string { return "global_setting" }

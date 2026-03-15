@@ -25,3 +25,5 @@ type User struct {
 	Profile      *Profile      `gorm:"foreignKey:UserID" json:"profile,omitempty"`
 	TelegramLink *TelegramLink `gorm:"foreignKey:UserID" json:"telegram_link,omitempty"`
 }
+
+func (User) TableName() string { return "user" }

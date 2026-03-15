@@ -15,3 +15,5 @@ type AuditLog struct {
 	Details    string    `gorm:"type:text" json:"details"`
 	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
+
+func (AuditLog) TableName() string { return "audit_log" }
