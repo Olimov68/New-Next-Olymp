@@ -362,14 +362,16 @@ examsHandler := userexams.NewHandler(db)
 			acg.POST("/violations", anticheatHandler.ReportViolation)
 		}
 
-		// Chat
-		chatGroup := userAPI.Group("/chat")
-		{
-			chatGroup.GET("/ws", chatHandler.HandleWebSocket)
-			chatGroup.GET("/messages", chatHandler.GetMessages)
-			chatGroup.GET("/online", chatHandler.GetOnlineCount)
-			chatGroup.GET("/status", chatHandler.GetChatStatus)
-		}
+	}
+
+	// Chat — faqat AuthRequired (ProfileRequired emas, WebSocket upgrade uchun)
+	chatAPI := api.Group("/user/chat")
+	chatAPI.Use(middleware.AuthRequired(jwtManager, db))
+	{
+		chatAPI.GET("/ws", chatHandler.HandleWebSocket)
+		chatAPI.GET("/messages", chatHandler.GetMessages)
+		chatAPI.GET("/online", chatHandler.GetOnlineCount)
+		chatAPI.GET("/status", chatHandler.GetChatStatus)
 	}
 
 	// ============================================================
