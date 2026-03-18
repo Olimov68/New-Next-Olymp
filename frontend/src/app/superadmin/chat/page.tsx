@@ -116,10 +116,10 @@ export default function ChatModerationPage() {
   const fetchMessages = useCallback(async () => {
     setMsgLoading(true);
     try {
-      const res = await getChatMessages({ page: msgPage, page_size: limit, search: msgSearch || undefined });
+      const res = await getChatMessages({ page: msgPage, limit, search: msgSearch || undefined });
       const list = normalizeList<ChatMsg>(res);
       setMessages(list);
-      setMsgTotal(res.pagination?.total || res?.data?.total || 0);
+      setMsgTotal(res?.data?.meta?.total || res.pagination?.total || res?.data?.total || 0);
     } catch {
       setMessages([]);
     }

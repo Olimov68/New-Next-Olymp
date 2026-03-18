@@ -132,9 +132,15 @@ export function useChat(config: UseChatConfig) {
         const data = JSON.parse(event.data);
 
         switch (data.type) {
-          case "new_message":
-            setMessages((prev) => [...prev, data.payload as ChatMessage]);
+          case "new_message": {
+            const newMsg = data.payload as ChatMessage;
+            setMessages((prev) => {
+              // Duplicate check — xabar allaqachon bormi
+              if (prev.some((m) => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
             break;
+          }
           case "message_deleted":
             setMessages((prev) =>
               prev.filter((m) => m.id !== data.payload?.id)
