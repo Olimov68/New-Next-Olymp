@@ -327,7 +327,7 @@ export default function ChatPage() {
                 ? "Kutib turing..."
                 : "Xabar yozing..."
             }
-            disabled={!canSend && message.trim().length === 0}
+            disabled={isBanned || !isChatOpen}
             maxLength={maxLen}
             className="flex-1 bg-gray-800/80 text-white px-4 py-2.5 rounded-xl border border-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/50 text-sm placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           />
