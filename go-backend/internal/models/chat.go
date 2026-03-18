@@ -10,6 +10,7 @@ import (
 type ChatMessage struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
 	UserID    uint           `gorm:"index;not null" json:"user_id"`
+	RoomID    uint           `gorm:"index;default:1" json:"room_id"`
 	User      User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Content   string         `gorm:"type:text;not null" json:"content"`
 	Type      string         `gorm:"type:varchar(20);default:'text'" json:"type"` // text, system, admin
@@ -55,4 +56,33 @@ type ChatSetting struct {
 
 func (ChatSetting) TableName() string {
 	return "chat_settings"
+}
+
+// ChatRoom — chat xonasi
+type ChatRoom struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Name      string    `gorm:"type:varchar(100);not null" json:"name"`
+	Type      string    `gorm:"type:varchar(20);default:'global'" json:"type"`
+	IsActive  bool      `gorm:"default:true" json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (ChatRoom) TableName() string {
+	return "chat_rooms"
+}
+
+// ChatModerationLog — moderation logi
+type ChatModerationLog struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	StaffID   uint      `gorm:"index;not null" json:"staff_id"`
+	Action    string    `gorm:"type:varchar(30);not null" json:"action"`
+	TargetID  uint      `json:"target_id"`
+	Reason    string    `gorm:"type:text" json:"reason"`
+	Details   string    `gorm:"type:text" json:"details"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (ChatModerationLog) TableName() string {
+	return "chat_moderation_logs"
 }

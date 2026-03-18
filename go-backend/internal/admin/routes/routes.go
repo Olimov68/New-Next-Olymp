@@ -9,8 +9,8 @@ import (
 
 	admincertificates "github.com/nextolympservice/go-backend/internal/admin/certificates"
 	admindashboard "github.com/nextolympservice/go-backend/internal/admin/dashboard"
-	adminfeedback "github.com/nextolympservice/go-backend/internal/admin/feedback"
 	adminnews "github.com/nextolympservice/go-backend/internal/admin/news"
+	adminresults "github.com/nextolympservice/go-backend/internal/admin/results"
 	admintests "github.com/nextolympservice/go-backend/internal/admin/tests"
 	adminusers "github.com/nextolympservice/go-backend/internal/admin/users"
 	"github.com/nextolympservice/go-backend/internal/chat"
@@ -25,8 +25,7 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 	usersHandler := adminusers.NewHandler(db)
 	newsHandler := adminnews.NewHandler(db)
 	certsHandler := admincertificates.NewHandler(db)
-	feedbackHandler := adminfeedback.NewHandler(db)
-	resultsHandler := adminfeedback.NewResultsHandler(db)
+	resultsHandler := adminresults.NewResultsHandler(db)
 	uploadHandler := panelupload.NewHandler(cfg)
 
 	// Admin group
@@ -34,7 +33,7 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 	admin.Use(middleware.PanelAuthRequired(panelJWT, db))
 	admin.Use(middleware.AdminOnly())
 	{
-		// Dashboard - no specific permission, filtered internally
+		// Dashboard
 		admin.GET("/dashboard", dashHandler.Stats)
 
 		// Olympiads
@@ -90,14 +89,6 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 			cerG.GET("/:id", middleware.PermissionRequired(db, "certificates.view"), certsHandler.GetByID)
 		}
 
-		// Feedback
-		fbG := admin.Group("/feedback")
-		{
-			fbG.GET("", middleware.PermissionRequired(db, "news.view"), feedbackHandler.List)
-			fbG.GET("/:id", middleware.PermissionRequired(db, "news.view"), feedbackHandler.GetByID)
-			fbG.PUT("/:id/reply", middleware.PermissionRequired(db, "news.update"), feedbackHandler.Reply)
-		}
-
 		// Chat Moderation
 		chatG := admin.Group("/chat")
 		{
@@ -108,6 +99,9 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 			chatG.POST("/toggle", chatHandler.AdminToggleChat)
 			chatG.GET("/bans", chatHandler.AdminGetBannedUsers)
 			chatG.GET("/online", chatHandler.GetOnlineCount)
+			chatG.GET("/settings", chatHandler.AdminGetSettings)
+			chatG.PUT("/settings", chatHandler.AdminUpdateSettings)
+			chatG.GET("/moderation-logs", chatHandler.AdminGetModerationLogs)
 		}
 
 		// Upload

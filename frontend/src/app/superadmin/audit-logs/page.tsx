@@ -26,7 +26,7 @@ interface AuditLog {
 
 const actorTypes = ["admin", "superadmin", "user", "system"];
 const actions = ["create", "update", "delete", "block", "unblock", "login", "logout", "approve", "refund", "reply"];
-const resources = ["admin", "user", "olympiad", "mock_test", "question", "result", "news", "certificate", "feedback", "payment", "settings", "security"];
+const resources = ["admin", "user", "olympiad", "mock_test", "question", "result", "news", "certificate", "chat", "payment", "settings", "security"];
 
 const actionColors: Record<string, string> = {
   create: "bg-green-600", update: "bg-blue-600", delete: "bg-red-600",

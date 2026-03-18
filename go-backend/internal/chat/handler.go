@@ -146,6 +146,7 @@ func (h *Handler) onMessage(client *Client, msg *IncomingMessage) {
 func (h *Handler) GetMessages(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	beforeID, _ := strconv.Atoi(c.DefaultQuery("before_id", "0"))
 
 	if page < 1 {
 		page = 1
@@ -154,21 +155,26 @@ func (h *Handler) GetMessages(c *gin.Context) {
 		limit = 50
 	}
 
-	offset := (page - 1) * limit
-
 	var messages []models.ChatMessage
 	var total int64
 
 	h.db.Model(&models.ChatMessage{}).Where("is_deleted = false").Count(&total)
 
-	h.db.Where("is_deleted = false").
+	query := h.db.Where("is_deleted = false").
 		Preload("User", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, username, status")
 		}).
 		Order("created_at DESC").
-		Offset(offset).
-		Limit(limit).
-		Find(&messages)
+		Limit(limit)
+
+	if beforeID > 0 {
+		query = query.Where("id < ?", beforeID)
+	} else {
+		offset := (page - 1) * limit
+		query = query.Offset(offset)
+	}
+
+	query.Find(&messages)
 
 	// Profile ma'lumotlarini qo'shish
 	type MessageResponse struct {
@@ -205,14 +211,17 @@ func (h *Handler) GetMessages(c *gin.Context) {
 		})
 	}
 
+	hasMore := len(messages) == limit
+
 	response.Success(c, http.StatusOK, "Chat xabarlari", gin.H{
 		"messages": result,
 		"meta": gin.H{
-			"total":   total,
-			"page":    page,
-			"limit":   limit,
-			"pages":   (total + int64(limit) - 1) / int64(limit),
-			"online":  h.hub.OnlineCount(),
+			"total":    total,
+			"page":     page,
+			"limit":    limit,
+			"pages":    (total + int64(limit) - 1) / int64(limit),
+			"online":   h.hub.OnlineCount(),
+			"has_more": hasMore,
 		},
 	})
 }
@@ -246,6 +255,12 @@ func (h *Handler) AdminDeleteMessage(c *gin.Context) {
 	h.db.Model(&msg).Updates(map[string]interface{}{
 		"is_deleted": true,
 		"deleted_by": sid,
+	})
+
+	h.db.Create(&models.ChatModerationLog{
+		StaffID:  sid,
+		Action:   "delete_message",
+		TargetID: uint(id),
 	})
 
 	// Broadcast delete event
@@ -299,6 +314,13 @@ func (h *Handler) AdminBanUser(c *gin.Context) {
 
 	h.db.Create(&ban)
 
+	h.db.Create(&models.ChatModerationLog{
+		StaffID:  sid,
+		Action:   "ban",
+		TargetID: uint(userID),
+		Reason:   body.Reason,
+	})
+
 	// Broadcast ban event
 	h.hub.Broadcast(&BroadcastMessage{
 		Type: "user_banned",
@@ -319,9 +341,18 @@ func (h *Handler) AdminUnbanUser(c *gin.Context) {
 		return
 	}
 
+	staffID, _ := c.Get("staff_id")
+	sid, _ := staffID.(uint)
+
 	h.db.Model(&models.ChatBan{}).
 		Where("user_id = ? AND is_active = true", userID).
 		Update("is_active", false)
+
+	h.db.Create(&models.ChatModerationLog{
+		StaffID:  sid,
+		Action:   "unban",
+		TargetID: uint(userID),
+	})
 
 	response.Success(c, http.StatusOK, "Ban bekor qilindi", nil)
 }
@@ -344,6 +375,15 @@ func (h *Handler) AdminToggleChat(c *gin.Context) {
 		h.db.Model(&setting).Update("is_chat_open", body.IsOpen)
 	}
 
+	staffID, _ := c.Get("staff_id")
+	sid, _ := staffID.(uint)
+
+	h.db.Create(&models.ChatModerationLog{
+		StaffID: sid,
+		Action:  "toggle_chat",
+		Details: strconv.FormatBool(body.IsOpen),
+	})
+
 	// Broadcast chat status
 	h.hub.Broadcast(&BroadcastMessage{
 		Type: "chat_status",
@@ -364,6 +404,99 @@ func (h *Handler) AdminGetBannedUsers(c *gin.Context) {
 	var bans []models.ChatBan
 	h.db.Where("is_active = true").Preload("User").Order("created_at DESC").Find(&bans)
 	response.Success(c, http.StatusOK, "Bloklangan foydalanuvchilar", gin.H{"bans": bans})
+}
+
+// GetChatStatus — user endpoint to check ban status and chat settings
+func (h *Handler) GetChatStatus(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	uid, _ := userID.(uint)
+
+	var ban models.ChatBan
+	isBanned := h.db.Where("user_id = ? AND is_active = true AND (expires_at IS NULL OR expires_at > ?)", uid, time.Now()).First(&ban).Error == nil
+
+	var setting models.ChatSetting
+	if h.db.First(&setting).Error != nil {
+		setting = models.ChatSetting{IsChatOpen: true, MaxMessageLen: 500, SlowMode: 0}
+	}
+
+	response.Success(c, http.StatusOK, "Chat status", gin.H{
+		"is_banned":       isBanned,
+		"ban_reason":      ban.Reason,
+		"ban_type":        ban.Type,
+		"ban_expires_at":  ban.ExpiresAt,
+		"is_chat_open":    setting.IsChatOpen,
+		"max_message_len": setting.MaxMessageLen,
+		"slow_mode":       setting.SlowMode,
+		"online_count":    h.hub.OnlineCount(),
+	})
+}
+
+// AdminGetSettings — get chat settings
+func (h *Handler) AdminGetSettings(c *gin.Context) {
+	var setting models.ChatSetting
+	if h.db.First(&setting).Error != nil {
+		setting = models.ChatSetting{IsChatOpen: true, MaxMessageLen: 500}
+	}
+	response.Success(c, http.StatusOK, "Chat settings", setting)
+}
+
+// AdminUpdateSettings — update chat settings
+func (h *Handler) AdminUpdateSettings(c *gin.Context) {
+	var body struct {
+		MaxMessageLen int    `json:"max_message_len"`
+		SlowMode      int    `json:"slow_mode"`
+		MinAccountAge int    `json:"min_account_age"`
+		PinnedMessage string `json:"pinned_message"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		response.Error(c, http.StatusBadRequest, "Noto'g'ri ma'lumot", nil)
+		return
+	}
+
+	var setting models.ChatSetting
+	if h.db.First(&setting).Error != nil {
+		setting = models.ChatSetting{
+			IsChatOpen:    true,
+			MaxMessageLen: body.MaxMessageLen,
+			SlowMode:      body.SlowMode,
+			MinAccountAge: body.MinAccountAge,
+			PinnedMessage: body.PinnedMessage,
+		}
+		h.db.Create(&setting)
+	} else {
+		h.db.Model(&setting).Updates(map[string]interface{}{
+			"max_message_len": body.MaxMessageLen,
+			"slow_mode":       body.SlowMode,
+			"min_account_age": body.MinAccountAge,
+			"pinned_message":  body.PinnedMessage,
+		})
+	}
+
+	response.Success(c, http.StatusOK, "Chat sozlamalari yangilandi", setting)
+}
+
+// AdminGetModerationLogs — get moderation logs
+func (h *Handler) AdminGetModerationLogs(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "50"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 50
+	}
+
+	var logs []models.ChatModerationLog
+	var total int64
+	h.db.Model(&models.ChatModerationLog{}).Count(&total)
+	h.db.Order("created_at DESC").Offset((page - 1) * limit).Limit(limit).Find(&logs)
+
+	response.Success(c, http.StatusOK, "Moderation logs", gin.H{
+		"logs":  logs,
+		"total": total,
+		"page":  page,
+		"limit": limit,
+	})
 }
 
 // sanitizeMessage — basic HTML sanitization

@@ -126,13 +126,6 @@ export const updateCertTemplate = (id: number, data: Record<string, unknown>) =>
 export const deleteCertTemplate = (id: number) => del(`/certificate-templates/${id}`);
 
 // ============================================
-// Feedback
-// ============================================
-export const getFeedbacks = (params?: Record<string, unknown>) => get("/feedback", params);
-export const getFeedback = (id: number) => get(`/feedback/${id}`);
-export const replyFeedback = (id: number, data: { reply: string; status?: string }) => put(`/feedback/${id}/reply`, data);
-
-// ============================================
 // Payments
 // ============================================
 export const getPayments = (params?: Record<string, unknown>) => get("/payments", params);
@@ -180,3 +173,18 @@ export const getAuditLogs = (params?: Record<string, unknown>) => get("/audit-lo
 // ============================================
 export const getSettings = () => get("/settings");
 export const updateSettings = (data: Record<string, unknown>) => put("/settings", data);
+
+// ============================================
+// Chat Moderation
+// ============================================
+export const getChatMessages = (params?: Record<string, unknown>) => get("/chat/messages", params);
+export const deleteChatMessage = (id: number) => del(`/chat/messages/${id}`);
+export const banChatUser = (userId: number, data: { reason?: string; type?: string; duration?: number }) =>
+  post(`/chat/ban/${userId}`, data);
+export const unbanChatUser = (userId: number) => post(`/chat/unban/${userId}`);
+export const toggleChat = (data: { is_open: boolean }) => post("/chat/toggle", data);
+export const getChatBans = () => get("/chat/bans");
+export const getChatOnline = () => get("/chat/online");
+export const getChatSettings = () => get("/chat/settings");
+export const updateChatSettings = (data: Record<string, unknown>) => put("/chat/settings", data);
+export const getChatModerationLogs = (params?: Record<string, unknown>) => get("/chat/moderation-logs", params);

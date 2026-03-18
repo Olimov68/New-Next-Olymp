@@ -7,11 +7,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Trophy, Newspaper, Medal, UserCircle, LogOut, Home,
-  ClipboardCheck, Award, Wallet, Bell, MessageSquare,
+  ClipboardCheck, Award, Wallet, Bell, MessageCircle,
   Menu, X, LayoutDashboard, BarChart3
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ChatWidget } from "@/components/chat/ChatWidget";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, nextStep, loading, logout } = useAuth();
@@ -64,7 +63,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/certificates", label: "Sertifikatlar", icon: Award, module: "certificates" },
     { href: "/dashboard/balance", label: "Balans", icon: Wallet, module: "balance" },
     { href: "/dashboard/notifications", label: "Bildirishnomalar", icon: Bell, module: "notifications" },
-    { href: "/dashboard/feedback", label: "Fikr-mulohazalar", icon: MessageSquare, module: "feedback" },
+    { href: "/dashboard/chat", label: "Chat", icon: MessageCircle, module: "chat" },
     { href: "/dashboard/profile", label: t("dashboard.profile"), icon: UserCircle, module: "profile" },
   ];
 
@@ -177,8 +176,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="p-4 md:p-6 overflow-auto">{children}</main>
       </div>
 
-      {/* Global Chat Widget */}
-      <ChatWidget />
     </div>
   );
 }

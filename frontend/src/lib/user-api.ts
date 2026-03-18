@@ -59,18 +59,6 @@ export interface Certificate {
   created_at: string;
 }
 
-export interface Feedback {
-  id: number;
-  user_id: number;
-  category: string;
-  subject: string;
-  message: string;
-  status: string;
-  admin_reply: string;
-  replied_at: string;
-  created_at: string;
-}
-
 export interface UserResult {
   id: number;
   user_id: number;
@@ -453,19 +441,3 @@ export const listCertificates = (): Promise<Certificate[]> =>
 export const getCertificate = (id: number): Promise<Certificate> =>
   api.get(`/user/certificates/${id}`).then((r) => r.data.data ?? r.data);
 
-// ─── Feedback ────────────────────────────────────────────────────────────────
-
-export async function createFeedback(category: string, subject: string, message: string) {
-  const res = await api.post('/user/feedback', { category, subject, message });
-  return res.data.data;
-}
-
-export async function listFeedbacks() {
-  const res = await api.get('/user/feedback');
-  return res.data.data;
-}
-
-export async function getFeedback(id: number) {
-  const res = await api.get(`/user/feedback/${id}`);
-  return res.data.data;
-}

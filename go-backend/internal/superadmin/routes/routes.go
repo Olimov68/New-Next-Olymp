@@ -6,12 +6,13 @@ import (
 	"github.com/nextolympservice/go-backend/internal/utils"
 	"gorm.io/gorm"
 
+	"github.com/nextolympservice/go-backend/internal/chat"
+
 	saadmins "github.com/nextolympservice/go-backend/internal/superadmin/admins"
 	saaudit "github.com/nextolympservice/go-backend/internal/superadmin/audit"
 	sacerts "github.com/nextolympservice/go-backend/internal/superadmin/certificates"
 	sadashboard "github.com/nextolympservice/go-backend/internal/superadmin/dashboard"
-	safeedback "github.com/nextolympservice/go-backend/internal/superadmin/feedback"
-	samocktests "github.com/nextolympservice/go-backend/internal/superadmin/mocktests"
+samocktests "github.com/nextolympservice/go-backend/internal/superadmin/mocktests"
 	sanews "github.com/nextolympservice/go-backend/internal/superadmin/news"
 	saolympiads "github.com/nextolympservice/go-backend/internal/superadmin/olympiads"
 	sapayments "github.com/nextolympservice/go-backend/internal/superadmin/payments"
@@ -26,7 +27,7 @@ import (
 )
 
 // Register — superadmin routelarni ro'yxatdan o'tkazadi
-func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB) {
+func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB, chatHandler *chat.Handler) {
 	// Handlers
 	dashHandler := sadashboard.NewHandler(db)
 	adminsHandler := saadmins.NewHandler(db)
@@ -38,8 +39,7 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 	newsHandler := sanews.NewHandler(db)
 	certsHandler := sacerts.NewHandler(db)
 	templatesHandler := satemplates.NewHandler(db)
-	feedbackHandler := safeedback.NewHandler(db)
-	paymentsHandler := sapayments.NewHandler(db)
+paymentsHandler := sapayments.NewHandler(db)
 	permsHandler := saperms.NewHandler(db)
 	securityHandler := sasecurity.NewHandler(db)
 	auditHandler := saaudit.NewHandler(db)
@@ -147,14 +147,6 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 			tG.DELETE("/:id", templatesHandler.Delete)
 		}
 
-		// Feedback management
-		fG := sa.Group("/feedback")
-		{
-			fG.GET("", feedbackHandler.List)
-			fG.GET("/:id", feedbackHandler.GetByID)
-			fG.PUT("/:id/reply", feedbackHandler.Reply)
-		}
-
 		// Payments management (promo-codes ham shu ichida)
 		pG := sa.Group("/payments")
 		{
@@ -204,6 +196,21 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 		{
 			sG.GET("", settingsHandler.GetAll)
 			sG.PUT("", settingsHandler.Update)
+		}
+
+		// Chat moderation
+		chatG := sa.Group("/chat")
+		{
+			chatG.GET("/messages", chatHandler.GetMessages)
+			chatG.DELETE("/messages/:id", chatHandler.AdminDeleteMessage)
+			chatG.POST("/ban/:user_id", chatHandler.AdminBanUser)
+			chatG.POST("/unban/:user_id", chatHandler.AdminUnbanUser)
+			chatG.POST("/toggle", chatHandler.AdminToggleChat)
+			chatG.GET("/bans", chatHandler.AdminGetBannedUsers)
+			chatG.GET("/online", chatHandler.GetOnlineCount)
+			chatG.GET("/settings", chatHandler.AdminGetSettings)
+			chatG.PUT("/settings", chatHandler.AdminUpdateSettings)
+			chatG.GET("/moderation-logs", chatHandler.AdminGetModerationLogs)
 		}
 	}
 }

@@ -8,7 +8,7 @@ import {
   ShieldCheck,
   Trophy,
   GraduationCap,
-  MessageSquare,
+  MessageCircle,
   Award,
   CreditCard,
   AlertCircle,
@@ -23,8 +23,8 @@ interface DashboardStats {
   total_admins: number;
   total_olympiads: number;
   total_mock_tests: number;
-  total_feedbacks: number;
-  open_feedbacks: number;
+  total_chat_messages: number;
+  active_chat_bans: number;
   total_payments: number;
   total_certificates: number;
   active_promo_codes: number;
@@ -35,14 +35,6 @@ interface DashboardStats {
 interface LatestUser {
   id: number;
   username: string;
-  status: string;
-  created_at: string;
-}
-
-interface LatestFeedback {
-  id: number;
-  username: string;
-  subject: string;
   status: string;
   created_at: string;
 }
@@ -59,7 +51,6 @@ interface LatestPayment {
 export default function SuperAdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [latestUsers, setLatestUsers] = useState<LatestUser[]>([]);
-  const [latestFeedbacks, setLatestFeedbacks] = useState<LatestFeedback[]>([]);
   const [latestPayments, setLatestPayments] = useState<LatestPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +61,6 @@ export default function SuperAdminDashboard() {
         const d = res.data || res;
         setStats(d.stats);
         setLatestUsers(Array.isArray(d.latest_users) ? d.latest_users : []);
-        setLatestFeedbacks(Array.isArray(d.latest_feedbacks) ? d.latest_feedbacks : []);
         setLatestPayments(Array.isArray(d.latest_payments) ? d.latest_payments : []);
       })
       .catch((err) => {
@@ -103,7 +93,7 @@ export default function SuperAdminDashboard() {
     { label: "Adminlar", value: stats.total_admins, icon: ShieldCheck, color: "purple" },
     { label: "Olimpiadalar", value: stats.total_olympiads, icon: Trophy, color: "amber" },
     { label: "Mock testlar", value: stats.total_mock_tests, icon: GraduationCap, color: "green" },
-    { label: "Fikrlar", value: stats.total_feedbacks, sub: `${stats.open_feedbacks} ochiq`, icon: MessageSquare, color: "rose" },
+    { label: "Chat xabarlar", value: stats.total_chat_messages, icon: MessageCircle, color: "rose" },
     { label: "Sertifikatlar", value: stats.total_certificates, icon: Award, color: "cyan" },
     { label: "To'lovlar", value: stats.total_payments, icon: CreditCard, color: "emerald" },
     { label: "Bloklangan", value: stats.blocked_users, icon: AlertCircle, color: "red" },
@@ -168,30 +158,6 @@ export default function SuperAdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Latest Feedbacks */}
-        <Card className="border border-border bg-accent/50 shadow-none">
-          <CardContent className="p-4">
-            <h3 className="text-sm font-semibold text-muted-foreground mb-3">Oxirgi fikrlar</h3>
-            <div className="space-y-2">
-              {latestFeedbacks.length === 0 && <p className="text-xs text-muted-foreground">Hali yo'q</p>}
-              {latestFeedbacks.map((f) => (
-                <div key={f.id} className="flex items-center justify-between py-1.5 border-b border-border last:border-0">
-                  <div className="min-w-0">
-                    <span className="text-sm text-foreground truncate block">{f.subject}</span>
-                    <span className="text-[10px] text-muted-foreground">{f.username}</span>
-                  </div>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-                    f.status === "open" ? "bg-amber-500/10 text-amber-400" :
-                    f.status === "answered" ? "bg-green-500/10 text-green-400" :
-                    "bg-muted/50 text-muted-foreground"
-                  }`}>
-                    {f.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Latest Payments */}

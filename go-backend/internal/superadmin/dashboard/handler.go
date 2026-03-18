@@ -23,8 +23,8 @@ type SuperAdminStats struct {
 	TotalAdmins       int64   `json:"total_admins"`
 	TotalOlympiads    int64   `json:"total_olympiads"`
 	TotalMockTests    int64   `json:"total_mock_tests"`
-	TotalFeedbacks    int64   `json:"total_feedbacks"`
-	OpenFeedbacks     int64   `json:"open_feedbacks"`
+	TotalChatMessages int64   `json:"total_chat_messages"`
+	ActiveChatBans    int64   `json:"active_chat_bans"`
 	TotalPayments     int64   `json:"total_payments"`
 	TotalCertificates int64   `json:"total_certificates"`
 	ActivePromoCodes  int64   `json:"active_promo_codes"`
@@ -35,15 +35,6 @@ type SuperAdminStats struct {
 type LatestUser struct {
 	ID        uint   `json:"id"`
 	Username  string `json:"username"`
-	Status    string `json:"status"`
-	CreatedAt string `json:"created_at"`
-}
-
-type LatestFeedback struct {
-	ID        uint   `json:"id"`
-	UserID    uint   `json:"user_id"`
-	Username  string `json:"username"`
-	Subject   string `json:"subject"`
 	Status    string `json:"status"`
 	CreatedAt string `json:"created_at"`
 }
@@ -65,8 +56,8 @@ func (h *Handler) Stats(c *gin.Context) {
 	h.db.Raw("SELECT COUNT(*) FROM staff_users WHERE role = 'admin'").Scan(&stats.TotalAdmins)
 	h.db.Raw("SELECT COUNT(*) FROM olympiads").Scan(&stats.TotalOlympiads)
 	h.db.Raw("SELECT COUNT(*) FROM mock_tests").Scan(&stats.TotalMockTests)
-	h.db.Raw("SELECT COUNT(*) FROM feedbacks").Scan(&stats.TotalFeedbacks)
-	h.db.Raw("SELECT COUNT(*) FROM feedbacks WHERE status = 'open'").Scan(&stats.OpenFeedbacks)
+	h.db.Raw("SELECT COUNT(*) FROM chat_messages WHERE is_deleted = false").Scan(&stats.TotalChatMessages)
+	h.db.Raw("SELECT COUNT(*) FROM chat_bans WHERE is_active = true").Scan(&stats.ActiveChatBans)
 	h.db.Raw("SELECT COUNT(*) FROM payments").Scan(&stats.TotalPayments)
 	h.db.Raw("SELECT COUNT(*) FROM certificates").Scan(&stats.TotalCertificates)
 	h.db.Raw("SELECT COUNT(*) FROM promo_codes WHERE status = 'active'").Scan(&stats.ActivePromoCodes)
@@ -84,24 +75,6 @@ func (h *Handler) Stats(c *gin.Context) {
 			Status:    string(u.Status),
 			CreatedAt: u.CreatedAt.Format("2006-01-02T15:04:05Z"),
 		}
-	}
-
-	// Latest feedbacks
-	var latestFeedbacks []models.Feedback
-	h.db.Preload("User").Order("created_at DESC").Limit(5).Find(&latestFeedbacks)
-	feedbacks := make([]LatestFeedback, len(latestFeedbacks))
-	for i, f := range latestFeedbacks {
-		fb := LatestFeedback{
-			ID:        f.ID,
-			UserID:    f.UserID,
-			Subject:   f.Subject,
-			Status:    string(f.Status),
-			CreatedAt: f.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		}
-		if f.User != nil {
-			fb.Username = f.User.Username
-		}
-		feedbacks[i] = fb
 	}
 
 	// Latest payments
@@ -123,9 +96,8 @@ func (h *Handler) Stats(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "SuperAdmin dashboard stats", gin.H{
-		"stats":            stats,
-		"latest_users":     users,
-		"latest_feedbacks": feedbacks,
-		"latest_payments":  payments,
+		"stats":           stats,
+		"latest_users":    users,
+		"latest_payments": payments,
 	})
 }

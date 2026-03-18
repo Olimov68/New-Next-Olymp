@@ -72,7 +72,6 @@ func Migrate(db *gorm.DB) error {
 		&models.MockAttemptAnswer{},
 		&models.MockTestQuestionStat{},
 		// Communication
-		&models.Feedback{},
 		&models.Notification{},
 		&models.NotificationPreference{},
 		// Finance
@@ -95,6 +94,8 @@ func Migrate(db *gorm.DB) error {
 		&models.ChatMessage{},
 		&models.ChatBan{},
 		&models.ChatSetting{},
+		&models.ChatRoom{},
+		&models.ChatModerationLog{},
 		// Anti-cheat & Security events
 		&models.AntiCheatViolation{},
 		&models.SuspiciousEvent{},

@@ -22,8 +22,7 @@ import (
 	userdevices "github.com/nextolympservice/go-backend/internal/user/devices"
 	userleaderboard "github.com/nextolympservice/go-backend/internal/user/leaderboard"
 	userexams "github.com/nextolympservice/go-backend/internal/user/exams"
-	userfeedback "github.com/nextolympservice/go-backend/internal/user/feedback"
-	usermocktests "github.com/nextolympservice/go-backend/internal/user/mocktests"
+usermocktests "github.com/nextolympservice/go-backend/internal/user/mocktests"
 	usernews "github.com/nextolympservice/go-backend/internal/user/news"
 	usernotifs "github.com/nextolympservice/go-backend/internal/user/notifications"
 	userolympiads "github.com/nextolympservice/go-backend/internal/user/olympiads"
@@ -104,8 +103,7 @@ func Setup(cfg *config.Config, db *gorm.DB, redisClient *cache.RedisClient) *gin
 	mockTestsHandler := usermocktests.NewHandler(usermocktests.NewService(usermocktests.NewRepository(db)))
 	newsHandler := usernews.NewHandler(usernews.NewService(usernews.NewRepository(db)))
 	certsHandler := usercerts.NewHandler(usercerts.NewService(usercerts.NewRepository(db)))
-	feedbackHandler := userfeedback.NewHandler(userfeedback.NewService(userfeedback.NewRepository(db)))
-	examsHandler := userexams.NewHandler(db)
+examsHandler := userexams.NewHandler(db)
 	balanceHandler := userbalance.NewHandler(db)
 	notifsHandler := usernotifs.NewHandler(db)
 	promosHandler := userpromos.NewHandler(db)
@@ -280,14 +278,6 @@ func Setup(cfg *config.Config, db *gorm.DB, redisClient *cache.RedisClient) *gin
 			cg.GET("/:id", certsHandler.GetByID)
 		}
 
-		// Feedback
-		fg := userAPI.Group("/feedback")
-		{
-			fg.POST("", feedbackHandler.Create)
-			fg.GET("", feedbackHandler.List)
-			fg.GET("/:id", feedbackHandler.GetByID)
-		}
-
 		// Exam — test topshirish
 		eg := userAPI.Group("/exams")
 		{
@@ -364,6 +354,7 @@ func Setup(cfg *config.Config, db *gorm.DB, redisClient *cache.RedisClient) *gin
 			chatGroup.GET("/ws", chatHandler.HandleWebSocket)
 			chatGroup.GET("/messages", chatHandler.GetMessages)
 			chatGroup.GET("/online", chatHandler.GetOnlineCount)
+			chatGroup.GET("/status", chatHandler.GetChatStatus)
 		}
 	}
 
@@ -394,7 +385,7 @@ func Setup(cfg *config.Config, db *gorm.DB, redisClient *cache.RedisClient) *gin
 	// SUPERADMIN ROUTES — /api/v1/superadmin/...
 	// faqat superadmin kiradi (centralized)
 	// ============================================================
-	saroutes.Register(api, panelJWT, db)
+	saroutes.Register(api, panelJWT, db, chatHandler)
 
 	return r
 }
