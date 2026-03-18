@@ -12,8 +12,10 @@ import {
   MessageCircle,
   AlertTriangle,
   ArrowDown,
-  ChevronUp,
+  Reply,
+  X,
 } from "lucide-react";
+import type { ChatMessage } from "@/hooks/useChat";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
 
@@ -21,6 +23,7 @@ export default function ChatPage() {
   const { token, user } = useAuth();
   const [message, setMessage] = useState("");
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -88,9 +91,19 @@ export default function ChatPage() {
   const handleSend = () => {
     const trimmed = message.trim();
     if (!trimmed || cooldown) return;
-    sendMessage(trimmed);
+    sendMessage(trimmed, replyingTo?.id);
     setMessage("");
+    setReplyingTo(null);
     inputRef.current?.focus();
+  };
+
+  const scrollToMessage = (msgId: number) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("bg-indigo-500/10");
+      setTimeout(() => el.classList.remove("bg-indigo-500/10"), 2000);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -232,7 +245,7 @@ export default function ChatPage() {
           const isAdmin = msg.role === "admin" || msg.role === "superadmin";
 
           return (
-            <div key={msg.id}>
+            <div key={msg.id} id={`msg-${msg.id}`} className="transition-colors duration-500 rounded-lg">
               {/* Date separator */}
               {shouldShowDateSeparator(index) && (
                 <div className="flex items-center gap-3 py-3">
@@ -245,7 +258,7 @@ export default function ChatPage() {
               )}
 
               {/* Message */}
-              <div className={`flex gap-2.5 mb-2 ${isMe ? "flex-row-reverse" : ""}`}>
+              <div className={`group flex gap-2.5 mb-2 ${isMe ? "flex-row-reverse" : ""}`}>
                 {/* Avatar */}
                 <div className="flex-shrink-0 mt-1">
                   {msg.photo_url ? (
@@ -287,9 +300,49 @@ export default function ChatPage() {
                         : "bg-gray-800 text-gray-200 rounded-tl-md"
                     }`}
                   >
+                    {/* Reply preview — Telegram style */}
+                    {msg.reply_to && (
+                      <button
+                        onClick={() => scrollToMessage(msg.reply_to!.id)}
+                        className={`flex items-start gap-2 w-full mb-2 p-2 rounded-lg text-left transition-colors ${
+                          isMe
+                            ? "bg-indigo-500/30 hover:bg-indigo-500/40"
+                            : isAdmin
+                            ? "bg-amber-500/10 hover:bg-amber-500/20"
+                            : "bg-gray-700/50 hover:bg-gray-700/70"
+                        }`}
+                      >
+                        <div className={`w-0.5 rounded-full self-stretch flex-shrink-0 ${
+                          isMe ? "bg-white/60" : "bg-indigo-400"
+                        }`} />
+                        <div className="min-w-0 flex-1">
+                          <span className={`text-[11px] font-bold block ${
+                            isMe ? "text-white/80" : "text-indigo-400"
+                          }`}>
+                            {msg.reply_to.username}
+                          </span>
+                          <span className={`text-[11px] block truncate ${
+                            isMe ? "text-white/60" : "text-gray-400"
+                          }`}>
+                            {msg.reply_to.content}
+                          </span>
+                        </div>
+                      </button>
+                    )}
                     {msg.content}
                   </div>
                 </div>
+
+                {/* Reply button — appears on hover */}
+                <button
+                  onClick={() => { setReplyingTo(msg); inputRef.current?.focus(); }}
+                  className={`self-center opacity-0 group-hover:opacity-100 p-1.5 rounded-full hover:bg-gray-700/50 transition-all ${
+                    isMe ? "order-first" : ""
+                  }`}
+                  title="Javob berish"
+                >
+                  <Reply className="w-3.5 h-3.5 text-gray-500" />
+                </button>
               </div>
             </div>
           );
@@ -311,6 +364,22 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="bg-gray-900/80 backdrop-blur-sm border-t border-gray-800 px-4 py-3 rounded-b-xl">
+        {/* Reply banner */}
+        {replyingTo && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
+            <div className="w-0.5 h-8 bg-indigo-500 rounded-full flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-bold text-indigo-400">{replyingTo.username}</span>
+              <p className="text-xs text-gray-400 truncate">{replyingTo.content}</p>
+            </div>
+            <button
+              onClick={() => setReplyingTo(null)}
+              className="p-1 hover:bg-white/10 rounded-full transition-colors flex-shrink-0"
+            >
+              <X className="w-4 h-4 text-gray-400" />
+            </button>
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <input
             ref={inputRef}

@@ -48,8 +48,9 @@ func NewClient(hub *Hub, conn *websocket.Conn, userID uint, username, photoURL, 
 
 // IncomingMessage — clientdan kelgan xabar
 type IncomingMessage struct {
-	Type    string `json:"type"`
-	Content string `json:"content"`
+	Type      string `json:"type"`
+	Content   string `json:"content"`
+	ReplyToID *uint  `json:"reply_to_id,omitempty"`
 }
 
 // ReadPump — client dan xabarlar o'qish

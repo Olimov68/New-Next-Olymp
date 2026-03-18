@@ -116,9 +116,10 @@ func (h *Handler) onMessage(client *Client, msg *IncomingMessage) {
 
 	// DB ga saqlash
 	chatMsg := models.ChatMessage{
-		UserID:  client.userID,
-		Content: content,
-		Type:    "text",
+		UserID:    client.userID,
+		Content:   content,
+		Type:      "text",
+		ReplyToID: msg.ReplyToID,
 	}
 
 	if err := h.db.Create(&chatMsg).Error; err != nil {
@@ -126,19 +127,46 @@ func (h *Handler) onMessage(client *Client, msg *IncomingMessage) {
 		return
 	}
 
+	// Reply ma'lumotlarini olish
+	var replyData map[string]interface{}
+	if msg.ReplyToID != nil && *msg.ReplyToID > 0 {
+		var replyMsg models.ChatMessage
+		if h.db.Preload("User").First(&replyMsg, *msg.ReplyToID).Error == nil {
+			var replyProfile models.Profile
+			h.db.Where("user_id = ?", replyMsg.UserID).First(&replyProfile)
+			replyUsername := replyMsg.User.Username
+			if replyProfile.FirstName != "" {
+				replyUsername = replyProfile.FirstName
+			}
+			replyContent := replyMsg.Content
+			if len(replyContent) > 100 {
+				replyContent = replyContent[:100] + "..."
+			}
+			replyData = map[string]interface{}{
+				"id":       replyMsg.ID,
+				"username": replyUsername,
+				"content":  replyContent,
+			}
+		}
+	}
+
 	// Broadcast
+	payload := map[string]interface{}{
+		"id":         chatMsg.ID,
+		"user_id":    client.userID,
+		"username":   client.username,
+		"photo_url":  client.photoURL,
+		"content":    content,
+		"type":       "text",
+		"role":       client.role,
+		"created_at": chatMsg.CreatedAt.Format(time.RFC3339),
+	}
+	if replyData != nil {
+		payload["reply_to"] = replyData
+	}
 	h.hub.Broadcast(&BroadcastMessage{
-		Type: "new_message",
-		Payload: map[string]interface{}{
-			"id":         chatMsg.ID,
-			"user_id":    client.userID,
-			"username":   client.username,
-			"photo_url":  client.photoURL,
-			"content":    content,
-			"type":       "text",
-			"role":       client.role,
-			"created_at": chatMsg.CreatedAt.Format(time.RFC3339),
-		},
+		Type:    "new_message",
+		Payload: payload,
 	})
 }
 
@@ -177,14 +205,21 @@ func (h *Handler) GetMessages(c *gin.Context) {
 	query.Find(&messages)
 
 	// Profile ma'lumotlarini qo'shish
+	type ReplyInfo struct {
+		ID       uint   `json:"id"`
+		Username string `json:"username"`
+		Content  string `json:"content"`
+	}
+
 	type MessageResponse struct {
-		ID        uint   `json:"id"`
-		UserID    uint   `json:"user_id"`
-		Username  string `json:"username"`
-		PhotoURL  string `json:"photo_url"`
-		Content   string `json:"content"`
-		Type      string `json:"type"`
-		CreatedAt string `json:"created_at"`
+		ID        uint       `json:"id"`
+		UserID    uint       `json:"user_id"`
+		Username  string     `json:"username"`
+		PhotoURL  string     `json:"photo_url"`
+		Content   string     `json:"content"`
+		Type      string     `json:"type"`
+		ReplyTo   *ReplyInfo `json:"reply_to,omitempty"`
+		CreatedAt string     `json:"created_at"`
 	}
 
 	var result []MessageResponse
@@ -200,6 +235,28 @@ func (h *Handler) GetMessages(c *gin.Context) {
 			}
 		}
 
+		var replyInfo *ReplyInfo
+		if msg.ReplyToID != nil && *msg.ReplyToID > 0 {
+			var replyMsg models.ChatMessage
+			if h.db.Preload("User").First(&replyMsg, *msg.ReplyToID).Error == nil {
+				var replyProfile models.Profile
+				h.db.Where("user_id = ?", replyMsg.UserID).First(&replyProfile)
+				rUsername := replyMsg.User.Username
+				if replyProfile.FirstName != "" {
+					rUsername = replyProfile.FirstName
+				}
+				rContent := replyMsg.Content
+				if len(rContent) > 100 {
+					rContent = rContent[:100] + "..."
+				}
+				replyInfo = &ReplyInfo{
+					ID:       replyMsg.ID,
+					Username: rUsername,
+					Content:  rContent,
+				}
+			}
+		}
+
 		result = append(result, MessageResponse{
 			ID:        msg.ID,
 			UserID:    msg.UserID,
@@ -207,6 +264,7 @@ func (h *Handler) GetMessages(c *gin.Context) {
 			PhotoURL:  profile.PhotoURL,
 			Content:   msg.Content,
 			Type:      msg.Type,
+			ReplyTo:   replyInfo,
 			CreatedAt: msg.CreatedAt.Format(time.RFC3339),
 		})
 	}
@@ -509,7 +567,8 @@ func (h *Handler) AdminSendMessage(c *gin.Context) {
 	}
 
 	var body struct {
-		Content string `json:"content" binding:"required"`
+		Content   string `json:"content" binding:"required"`
+		ReplyToID *uint  `json:"reply_to_id,omitempty"`
 	}
 	if err := c.ShouldBindJSON(&body); err != nil {
 		response.Error(c, http.StatusBadRequest, "Xabar matni talab qilinadi", nil)
@@ -535,9 +594,10 @@ func (h *Handler) AdminSendMessage(c *gin.Context) {
 
 	// DB ga saqlash
 	chatMsg := models.ChatMessage{
-		UserID:  sid,
-		Content: content,
-		Type:    "admin",
+		UserID:    sid,
+		Content:   content,
+		Type:      "admin",
+		ReplyToID: body.ReplyToID,
 	}
 	if err := h.db.Create(&chatMsg).Error; err != nil {
 		response.Error(c, http.StatusInternalServerError, "Xabar saqlanmadi", nil)
@@ -551,19 +611,46 @@ func (h *Handler) AdminSendMessage(c *gin.Context) {
 
 	role := string(staff.Role)
 
+	// Reply ma'lumotlarini olish
+	var replyData map[string]interface{}
+	if body.ReplyToID != nil && *body.ReplyToID > 0 {
+		var replyMsg models.ChatMessage
+		if h.db.Preload("User").First(&replyMsg, *body.ReplyToID).Error == nil {
+			var replyProfile models.Profile
+			h.db.Where("user_id = ?", replyMsg.UserID).First(&replyProfile)
+			replyUsername := replyMsg.User.Username
+			if replyProfile.FirstName != "" {
+				replyUsername = replyProfile.FirstName
+			}
+			replyContent := replyMsg.Content
+			if len(replyContent) > 100 {
+				replyContent = replyContent[:100] + "..."
+			}
+			replyData = map[string]interface{}{
+				"id":       replyMsg.ID,
+				"username": replyUsername,
+				"content":  replyContent,
+			}
+		}
+	}
+
 	// Broadcast
+	payload := map[string]interface{}{
+		"id":         chatMsg.ID,
+		"user_id":    sid,
+		"username":   username,
+		"photo_url":  "",
+		"content":    content,
+		"type":       "admin",
+		"role":       role,
+		"created_at": chatMsg.CreatedAt.Format(time.RFC3339),
+	}
+	if replyData != nil {
+		payload["reply_to"] = replyData
+	}
 	h.hub.Broadcast(&BroadcastMessage{
-		Type: "new_message",
-		Payload: map[string]interface{}{
-			"id":         chatMsg.ID,
-			"user_id":    sid,
-			"username":   username,
-			"photo_url":  "",
-			"content":    content,
-			"type":       "admin",
-			"role":       role,
-			"created_at": chatMsg.CreatedAt.Format(time.RFC3339),
-		},
+		Type:    "new_message",
+		Payload: payload,
 	})
 
 	response.Success(c, http.StatusOK, "Xabar yuborildi", gin.H{

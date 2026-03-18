@@ -191,7 +191,7 @@ export const rejectUserByID = (userId: number, reason: string) => post(`/verific
 // Chat Moderation
 // ============================================
 export const getChatMessages = (params?: Record<string, unknown>) => get("/chat/messages", params);
-export const sendChatMessage = (content: string) => post("/chat/messages", { content });
+export const sendChatMessage = (content: string, replyToId?: number) => post("/chat/messages", { content, reply_to_id: replyToId || undefined });
 export const deleteChatMessage = (id: number) => del(`/chat/messages/${id}`);
 export const banChatUser = (userId: number, data: { reason?: string; type?: string; duration?: number }) =>
   post(`/chat/ban/${userId}`, data);

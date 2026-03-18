@@ -11,6 +11,7 @@ type ChatMessage struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
 	UserID    uint           `gorm:"index;not null" json:"user_id"`
 	RoomID    uint           `gorm:"index;default:1" json:"room_id"`
+	ReplyToID *uint          `gorm:"index" json:"reply_to_id,omitempty"`
 	User      User           `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Content   string         `gorm:"type:text;not null" json:"content"`
 	Type      string         `gorm:"type:varchar(20);default:'text'" json:"type"` // text, system, admin

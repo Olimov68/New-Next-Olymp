@@ -140,10 +140,7 @@ export default function ChatModerationPage() {
     if (!adminMsg.trim() || sending) return;
     setSending(true);
     try {
-      const msgText = replyingTo
-        ? `↩️ @${replyingTo.username}: "${replyingTo.content.slice(0, 50)}${replyingTo.content.length > 50 ? '...' : ''}"\n\n${adminMsg.trim()}`
-        : adminMsg.trim();
-      await sendChatMessage(msgText);
+      await sendChatMessage(adminMsg.trim(), replyingTo?.id);
       setAdminMsg("");
       setReplyingTo(null);
       toast.success("Xabar yuborildi");

@@ -2,6 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
+export interface ChatReplyTo {
+  id: number;
+  username: string;
+  content: string;
+}
+
 export interface ChatMessage {
   id: number;
   user_id: number;
@@ -10,6 +16,7 @@ export interface ChatMessage {
   content: string;
   type: string;
   role?: string;
+  reply_to?: ChatReplyTo;
   created_at: string;
 }
 
@@ -177,11 +184,11 @@ export function useChat(config: UseChatConfig) {
 
   // Send message with cooldown
   const sendMessage = useCallback(
-    (content: string) => {
+    (content: string, replyToId?: number) => {
       if (wsRef.current?.readyState === WebSocket.OPEN && !cooldown) {
-        wsRef.current.send(
-          JSON.stringify({ type: "message", content })
-        );
+        const payload: { type: string; content: string; reply_to_id?: number } = { type: "message", content };
+        if (replyToId) payload.reply_to_id = replyToId;
+        wsRef.current.send(JSON.stringify(payload));
         // Set 3 second cooldown
         setCooldown(true);
         if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
