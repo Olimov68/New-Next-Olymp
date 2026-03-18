@@ -13,6 +13,9 @@ import (
 	// Chat
 	"github.com/nextolympservice/go-backend/internal/chat"
 
+	// Payme
+	"github.com/nextolympservice/go-backend/internal/payme"
+
 	// Panel auth
 	panelauth "github.com/nextolympservice/go-backend/internal/panel/auth"
 
@@ -119,6 +122,9 @@ examsHandler := userexams.NewHandler(db)
 	chatHub := chat.NewHub()
 	go chatHub.Run()
 	chatHandler := chat.NewHandler(db, chatHub)
+
+	// ─── Payme ────────────────────────────────────────────────────────────
+	paymeHandler := payme.NewHandler(db, &cfg.Payme)
 
 	// Rate limiter
 	var rateLimiter *cache.RateLimiter
@@ -244,6 +250,9 @@ examsHandler := userexams.NewHandler(db)
 		}
 	}
 	api.POST("/telegram/webhook", telegramHandler.Webhook)
+
+	// Payme Merchant API endpoint (NO auth middleware — Payme calls this directly)
+	api.POST("/payme", paymeHandler.Handle)
 
 	// ============================================================
 	// USER ROUTES — /api/v1/user/...

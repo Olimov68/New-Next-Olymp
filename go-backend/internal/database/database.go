@@ -101,6 +101,8 @@ func Migrate(db *gorm.DB) error {
 		&models.SuspiciousEvent{},
 		// User verification
 		&models.UserVerification{},
+		// Payme transactions
+		&models.PaymeTransaction{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration failed: %w", err)

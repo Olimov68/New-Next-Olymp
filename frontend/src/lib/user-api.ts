@@ -265,8 +265,22 @@ export const getTransactions = (params?: {
 }): Promise<TransactionsResponse> =>
   api.get("/user/balance/transactions", { params }).then((r) => r.data);
 
-export const topUp = (amount: number) =>
-  api.post("/user/balance/topup", { amount }).then((r) => r.data);
+export interface TopUpResponse {
+  payment_id: number;
+  amount: number;
+  transaction_id: string;
+  status: string;
+  checkout_url: string;
+  payme: {
+    merchant_id: string;
+    amount: number;
+    order_id: number;
+    checkout_url: string;
+  };
+}
+
+export const topUp = (amount: number): Promise<TopUpResponse> =>
+  api.post("/user/balance/topup", { amount }).then((r) => r.data.data ?? r.data);
 
 // ─── Promo Code ─────────────────────────────────────────────────────────────
 

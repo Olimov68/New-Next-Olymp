@@ -18,6 +18,14 @@ type Config struct {
 	Upload   UploadConfig
 	Telegram TelegramConfig
 	CORS     CORSConfig
+	Payme    PaymeConfig
+}
+
+type PaymeConfig struct {
+	MerchantID string
+	Key        string
+	TestKey    string
+	TestMode   bool
 }
 
 type RedisConfig struct {
@@ -92,6 +100,8 @@ func Load() (*Config, error) {
 		corsOrigins[i] = strings.TrimSpace(corsOrigins[i])
 	}
 
+	paymeTestMode := getEnv("PAYME_TEST_MODE", "true") == "true"
+
 	cfg := &Config{
 		App: AppConfig{
 			Port: getEnv("APP_PORT", "8080"),
@@ -133,6 +143,12 @@ func Load() (*Config, error) {
 			RefreshSecret:      getEnv("PANEL_JWT_REFRESH_SECRET", ""),
 			AccessExpiryHours:  panelAccessExpiry,
 			RefreshExpiryHours: panelRefreshExpiry,
+		},
+		Payme: PaymeConfig{
+			MerchantID: getEnv("PAYME_MERCHANT_ID", ""),
+			Key:        getEnv("PAYME_KEY", ""),
+			TestKey:    getEnv("PAYME_TEST_KEY", ""),
+			TestMode:   paymeTestMode,
 		},
 	}
 

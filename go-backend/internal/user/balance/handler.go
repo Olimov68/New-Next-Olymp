@@ -3,6 +3,7 @@ package balance
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -85,10 +86,26 @@ func (h *Handler) TopUp(c *gin.Context) {
 	}
 	h.db.Create(&payment)
 
+	// Build Payme checkout info
+	merchantID := os.Getenv("PAYME_MERCHANT_ID")
+	testMode := os.Getenv("PAYME_TEST_MODE") == "true"
+	checkoutURL := "https://checkout.paycom.uz"
+	if testMode {
+		checkoutURL = "https://test.paycom.uz"
+	}
+	amountTiyin := int64(req.Amount * 100) // UZS -> tiyin
+
 	response.Success(c, http.StatusCreated, "To'ldirish so'rovi yaratildi", gin.H{
 		"payment_id":     payment.ID,
 		"amount":         payment.Amount,
 		"transaction_id": payment.TransactionID,
 		"status":         payment.Status,
+		"checkout_url":   checkoutURL,
+		"payme": gin.H{
+			"merchant_id": merchantID,
+			"amount":      amountTiyin,
+			"order_id":    payment.ID,
+			"checkout_url": checkoutURL,
+		},
 	})
 }
