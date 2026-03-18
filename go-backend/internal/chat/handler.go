@@ -243,7 +243,7 @@ func (h *Handler) AdminDeleteMessage(c *gin.Context) {
 		return
 	}
 
-	staffID, _ := c.Get("staff_id")
+	staffID, _ := c.Get("staffID")
 
 	var msg models.ChatMessage
 	if h.db.First(&msg, id).Error != nil {
@@ -296,7 +296,7 @@ func (h *Handler) AdminBanUser(c *gin.Context) {
 		body.Type = "ban"
 	}
 
-	staffID, _ := c.Get("staff_id")
+	staffID, _ := c.Get("staffID")
 	sid, _ := staffID.(uint)
 
 	ban := models.ChatBan{
@@ -341,7 +341,7 @@ func (h *Handler) AdminUnbanUser(c *gin.Context) {
 		return
 	}
 
-	staffID, _ := c.Get("staff_id")
+	staffID, _ := c.Get("staffID")
 	sid, _ := staffID.(uint)
 
 	h.db.Model(&models.ChatBan{}).
@@ -375,7 +375,7 @@ func (h *Handler) AdminToggleChat(c *gin.Context) {
 		h.db.Model(&setting).Update("is_chat_open", body.IsOpen)
 	}
 
-	staffID, _ := c.Get("staff_id")
+	staffID, _ := c.Get("staffID")
 	sid, _ := staffID.(uint)
 
 	h.db.Create(&models.ChatModerationLog{
@@ -501,7 +501,7 @@ func (h *Handler) AdminGetModerationLogs(c *gin.Context) {
 
 // AdminSendMessage — admin/superadmin chatga xabar yuborishi
 func (h *Handler) AdminSendMessage(c *gin.Context) {
-	staffID, _ := c.Get("staff_id")
+	staffID, _ := c.Get("staffID")
 	sid, _ := staffID.(uint)
 	if sid == 0 {
 		response.Error(c, http.StatusUnauthorized, "Avtorizatsiya talab qilinadi", nil)

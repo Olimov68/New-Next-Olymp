@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Trash2, Ban, ShieldOff, Power, PowerOff, Users, RefreshCw,
   MessageCircle, Settings, ScrollText, Loader2, ChevronLeft, ChevronRight, Search,
+  Reply, X, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -115,6 +116,9 @@ export default function ChatModerationPage() {
   const [adminMsg, setAdminMsg] = useState("");
   const [sending, setSending] = useState(false);
 
+  // Reply state
+  const [replyingTo, setReplyingTo] = useState<ChatMsg | null>(null);
+
   const limit = 20;
 
   // Fetch messages
@@ -136,8 +140,12 @@ export default function ChatModerationPage() {
     if (!adminMsg.trim() || sending) return;
     setSending(true);
     try {
-      await sendChatMessage(adminMsg.trim());
+      const msgText = replyingTo
+        ? `↩️ @${replyingTo.username}: "${replyingTo.content.slice(0, 50)}${replyingTo.content.length > 50 ? '...' : ''}"\n\n${adminMsg.trim()}`
+        : adminMsg.trim();
+      await sendChatMessage(msgText);
       setAdminMsg("");
+      setReplyingTo(null);
       toast.success("Xabar yuborildi");
       fetchMessages();
     } catch {
@@ -383,25 +391,40 @@ export default function ChatModerationPage() {
       {tab === "messages" && (
         <div className="space-y-4">
           {/* Admin xabar yuborish */}
-          <div className="flex gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-            <Input
-              placeholder="Admin sifatida xabar yozing..."
-              value={adminMsg}
-              onChange={(e) => setAdminMsg(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-              maxLength={1000}
-              disabled={sending || !isChatOpen}
-              className="flex-1 bg-muted border-border"
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!adminMsg.trim() || sending || !isChatOpen}
-              variant="default"
-              className="bg-amber-600 hover:bg-amber-500"
-            >
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4 mr-2" />}
-              {!sending && "Yuborish"}
-            </Button>
+          <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg space-y-2">
+            {replyingTo && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-md">
+                <Reply className="w-4 h-4 text-indigo-400 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs font-semibold text-indigo-400">{replyingTo.username}</span>
+                  <p className="text-xs text-muted-foreground truncate">{replyingTo.content}</p>
+                </div>
+                <button onClick={() => setReplyingTo(null)} className="shrink-0 p-1 hover:bg-white/10 rounded">
+                  <X className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
+              </div>
+            )}
+            <div className="flex gap-3">
+              <Input
+                placeholder={replyingTo ? `${replyingTo.username} ga javob yozing...` : "Admin sifatida xabar yozing..."}
+                value={adminMsg}
+                onChange={(e) => setAdminMsg(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                maxLength={1000}
+                disabled={sending || !isChatOpen}
+                className="flex-1 bg-muted border-border"
+                autoFocus={!!replyingTo}
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={!adminMsg.trim() || sending || !isChatOpen}
+                variant="default"
+                className="bg-amber-600 hover:bg-amber-500"
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                {!sending && "Yuborish"}
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -473,6 +496,14 @@ export default function ChatModerationPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => { setReplyingTo(msg); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                            title="Javob berish"
+                          >
+                            <Reply className="w-4 h-4 text-indigo-400" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="ghost"
