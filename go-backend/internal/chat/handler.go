@@ -114,6 +114,18 @@ func (h *Handler) onMessage(client *Client, msg *IncomingMessage) {
 	// Basic sanitize — HTML taglarni olib tashlash
 	content = sanitizeMessage(content)
 
+	// Yomon so'zlar filtri
+	if ContainsProfanity(content) {
+		client.send <- &BroadcastMessage{
+			Type: "error",
+			Payload: map[string]interface{}{
+				"code":    "profanity",
+				"message": "Xabaringizda taqiqlangan so'zlar mavjud. Iltimos, hurmatli munosabatda bo'ling.",
+			},
+		}
+		return
+	}
+
 	// DB ga saqlash
 	chatMsg := models.ChatMessage{
 		UserID:    client.userID,
@@ -549,8 +561,47 @@ func (h *Handler) AdminGetModerationLogs(c *gin.Context) {
 	h.db.Model(&models.ChatModerationLog{}).Count(&total)
 	h.db.Order("created_at DESC").Offset((page - 1) * limit).Limit(limit).Find(&logs)
 
+	// Staff username va target username qo'shish
+	type LogResponse struct {
+		ID             uint   `json:"id"`
+		StaffID        uint   `json:"staff_id"`
+		StaffUsername   string `json:"staff_username"`
+		Action         string `json:"action"`
+		TargetID       uint   `json:"target_id"`
+		TargetUsername string `json:"target_username"`
+		Reason         string `json:"reason"`
+		Details        string `json:"details"`
+		CreatedAt      string `json:"created_at"`
+	}
+
+	var result []LogResponse
+	for _, l := range logs {
+		var staff models.StaffUser
+		h.db.Select("id, username, full_name").First(&staff, l.StaffID)
+		staffName := staff.FullName
+		if staffName == "" {
+			staffName = staff.Username
+		}
+
+		var targetUser models.User
+		h.db.Select("id, username").First(&targetUser, l.TargetID)
+		targetName := targetUser.Username
+
+		result = append(result, LogResponse{
+			ID:             l.ID,
+			StaffID:        l.StaffID,
+			StaffUsername:   staffName,
+			Action:         l.Action,
+			TargetID:       l.TargetID,
+			TargetUsername: targetName,
+			Reason:         l.Reason,
+			Details:        l.Details,
+			CreatedAt:      l.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
 	response.Success(c, http.StatusOK, "Moderation logs", gin.H{
-		"logs":  logs,
+		"logs":  result,
 		"total": total,
 		"page":  page,
 		"limit": limit,

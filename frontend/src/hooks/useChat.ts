@@ -46,6 +46,7 @@ export function useChat(config: UseChatConfig) {
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [cooldown, setCooldown] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectAttemptsRef = useRef(0);
@@ -162,6 +163,12 @@ export function useChat(config: UseChatConfig) {
           case "user_banned":
             loadStatus();
             break;
+          case "error":
+            if (data.payload?.code === "profanity") {
+              setError(data.payload?.message || "Taqiqlangan so'z ishlatildi");
+              setTimeout(() => setError(null), 5000);
+            }
+            break;
         }
       } catch {
         // parse error
@@ -226,6 +233,7 @@ export function useChat(config: UseChatConfig) {
     hasMore,
     loadingMore,
     cooldown,
+    error,
     sendMessage,
     loadOlderMessages,
     loadStatus,

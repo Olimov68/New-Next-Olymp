@@ -54,8 +54,10 @@ interface ChatBanItem {
 interface ModerationLog {
   id: number;
   staff_id: number;
+  staff_username: string;
   action: string;
   target_id: number;
+  target_username: string;
   reason: string;
   details: string;
   created_at: string;
@@ -628,9 +630,9 @@ export default function ChatModerationPage() {
               <TableHeader>
                 <TableRow className="border-border hover:bg-accent">
                   <TableHead>ID</TableHead>
-                  <TableHead>Staff ID</TableHead>
+                  <TableHead>Admin</TableHead>
                   <TableHead>Amal</TableHead>
-                  <TableHead>Target ID</TableHead>
+                  <TableHead>Foydalanuvchi</TableHead>
                   <TableHead>Sabab</TableHead>
                   <TableHead>Tafsilotlar</TableHead>
                   <TableHead>Vaqt</TableHead>
@@ -654,7 +656,9 @@ export default function ChatModerationPage() {
                   logs.map((log) => (
                     <TableRow key={log.id} className="border-border hover:bg-accent">
                       <TableCell>{log.id}</TableCell>
-                      <TableCell>{log.staff_id}</TableCell>
+                      <TableCell>
+                        <span className="font-medium">{log.staff_username || `#${log.staff_id}`}</span>
+                      </TableCell>
                       <TableCell>
                         <Badge
                           className={
@@ -667,7 +671,9 @@ export default function ChatModerationPage() {
                           {log.action}
                         </Badge>
                       </TableCell>
-                      <TableCell>{log.target_id}</TableCell>
+                      <TableCell>
+                        <span className="font-medium">{log.target_username || `#${log.target_id}`}</span>
+                      </TableCell>
                       <TableCell className="max-w-[200px] truncate">{log.reason || "—"}</TableCell>
                       <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
                         {log.details || "—"}

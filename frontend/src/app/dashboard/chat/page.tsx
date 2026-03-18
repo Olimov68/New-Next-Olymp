@@ -38,6 +38,7 @@ export default function ChatPage() {
     hasMore,
     loadingMore,
     cooldown,
+    error: chatError,
     sendMessage,
     loadOlderMessages,
   } = useChat({
@@ -364,6 +365,13 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="bg-gray-900/80 backdrop-blur-sm border-t border-gray-800 px-4 py-3 rounded-b-xl">
+        {/* Profanity error */}
+        {chatError && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-xl">
+            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
+            <span className="text-xs text-red-400">{chatError}</span>
+          </div>
+        )}
         {/* Reply banner */}
         {replyingTo && (
           <div className="flex items-center gap-2 mb-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-xl">
