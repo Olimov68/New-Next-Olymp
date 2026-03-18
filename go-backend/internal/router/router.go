@@ -30,6 +30,9 @@ usermocktests "github.com/nextolympservice/go-backend/internal/user/mocktests"
 	useranticheat "github.com/nextolympservice/go-backend/internal/user/anticheat"
 	userresults "github.com/nextolympservice/go-backend/internal/user/results"
 
+	// Admin verifications (for user-facing verification status)
+	adminverifications "github.com/nextolympservice/go-backend/internal/admin/verifications"
+
 	// Admin centralized routes
 	adminroutes "github.com/nextolympservice/go-backend/internal/admin/routes"
 
@@ -231,6 +234,8 @@ examsHandler := userexams.NewHandler(db)
 			profileGroup.POST("/photo", userHandler.UploadPhoto)
 			profileGroup.PUT("/password", authHandler.ChangePassword)
 		}
+
+		protected.GET("/profile/verification-status", adminverifications.NewHandler(db).GetVerificationStatus)
 
 		telegramGroup := protected.Group("/telegram")
 		{

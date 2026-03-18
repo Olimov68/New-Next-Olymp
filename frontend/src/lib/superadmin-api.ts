@@ -177,6 +177,17 @@ export const updateSettings = (data: Record<string, unknown>) => put("/settings"
 // ============================================
 // Chat Moderation
 // ============================================
+// ============================================
+// Verifications
+// ============================================
+export const getVerifications = (params?: Record<string, unknown>) => get("/verifications", params);
+export const getVerification = (id: number) => get(`/verifications/${id}`);
+export const approveVerification = (id: number, data?: { note?: string }) => post(`/verifications/${id}/approve`, data);
+export const rejectVerification = (id: number, data: { reason: string }) => post(`/verifications/${id}/reject`, data);
+
+// ============================================
+// Chat Moderation
+// ============================================
 export const getChatMessages = (params?: Record<string, unknown>) => get("/chat/messages", params);
 export const deleteChatMessage = (id: number) => del(`/chat/messages/${id}`);
 export const banChatUser = (userId: number, data: { reason?: string; type?: string; duration?: number }) =>

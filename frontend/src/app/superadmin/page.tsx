@@ -15,6 +15,7 @@ import {
   Tag,
   DollarSign,
   TrendingUp,
+  UserCheck,
 } from "lucide-react";
 
 interface DashboardStats {
@@ -30,6 +31,7 @@ interface DashboardStats {
   active_promo_codes: number;
   total_revenue: number;
   weekly_new_users: number;
+  pending_verifications: number;
 }
 
 interface LatestUser {
@@ -100,6 +102,7 @@ export default function SuperAdminDashboard() {
     { label: "Aktiv promo kodlar", value: stats.active_promo_codes, icon: Tag, color: "orange" },
     { label: "Umumiy daromad", value: (stats.total_revenue || 0).toLocaleString() + " so'm", icon: DollarSign, color: "emerald" },
     { label: "Haftalik yangi", value: stats.weekly_new_users, icon: TrendingUp, color: "teal" },
+    { label: "Kutilayotgan tasdiq", value: stats.pending_verifications, icon: UserCheck, color: "yellow" },
   ];
 
   const colorMap: Record<string, string> = {
@@ -113,6 +116,7 @@ export default function SuperAdminDashboard() {
     red: "from-red-500/20 to-red-600/5 border-red-400/20 text-red-400",
     orange: "from-orange-500/20 to-orange-600/5 border-orange-400/20 text-orange-400",
     teal: "from-teal-500/20 to-teal-600/5 border-teal-400/20 text-teal-400",
+    yellow: "from-yellow-500/20 to-yellow-600/5 border-yellow-400/20 text-yellow-400",
   };
 
   return (

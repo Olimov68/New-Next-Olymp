@@ -130,6 +130,17 @@ export const getChatModerationLogs = (params?: Record<string, unknown>) =>
 // ============================================
 // Permissions
 // ============================================
+// ============================================
+// Verifications
+// ============================================
+export const getVerifications = (params?: Record<string, unknown>) => get("/verifications", params);
+export const getVerification = (id: number) => get(`/verifications/${id}`);
+export const approveVerification = (id: number, data?: { note?: string }) => post(`/verifications/${id}/approve`, data);
+export const rejectVerification = (id: number, data: { reason: string }) => post(`/verifications/${id}/reject`, data);
+
+// ============================================
+// Permissions
+// ============================================
 export const getMyPermissions = () => {
   return adminApi
     .get(`/panel/auth/permissions`, {

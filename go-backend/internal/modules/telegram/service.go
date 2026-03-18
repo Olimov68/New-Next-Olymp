@@ -102,6 +102,21 @@ func (s *Service) VerifyCode(userID uint, code string) error {
 		return fmt.Errorf("failed to update user: %w", err)
 	}
 
+	// Auto-approve any pending verification
+	now := time.Now()
+	s.repo.db.Model(&models.UserVerification{}).
+		Where("user_id = ? AND status = 'pending'", userID).
+		Updates(map[string]interface{}{
+			"status":      "approved",
+			"method":      "telegram",
+			"verified_at": now,
+		})
+	// Also update user verification fields
+	s.repo.db.Model(&models.User{}).Where("id = ?", userID).Updates(map[string]interface{}{
+		"verification_method": "telegram",
+		"verified_at":         now,
+	})
+
 	// Telegram orqali tasdiqlash xabari yuborish
 	_ = s.SendMessage(tc.TelegramID,
 		"✅ <b>Muvaffaqiyatli ulandi!</b>\n\n"+

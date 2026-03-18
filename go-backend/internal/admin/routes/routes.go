@@ -9,6 +9,7 @@ import (
 
 	admincertificates "github.com/nextolympservice/go-backend/internal/admin/certificates"
 	admindashboard "github.com/nextolympservice/go-backend/internal/admin/dashboard"
+	adminverifications "github.com/nextolympservice/go-backend/internal/admin/verifications"
 	adminnews "github.com/nextolympservice/go-backend/internal/admin/news"
 	adminresults "github.com/nextolympservice/go-backend/internal/admin/results"
 	admintests "github.com/nextolympservice/go-backend/internal/admin/tests"
@@ -26,6 +27,7 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 	newsHandler := adminnews.NewHandler(db)
 	certsHandler := admincertificates.NewHandler(db)
 	resultsHandler := adminresults.NewResultsHandler(db)
+	verificationsHandler := adminverifications.NewHandler(db)
 	uploadHandler := panelupload.NewHandler(cfg)
 
 	// Admin group
@@ -87,6 +89,15 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 		{
 			cerG.GET("", middleware.PermissionRequired(db, "certificates.view"), certsHandler.List)
 			cerG.GET("/:id", middleware.PermissionRequired(db, "certificates.view"), certsHandler.GetByID)
+		}
+
+		// Verifications
+		vG := admin.Group("/verifications")
+		{
+			vG.GET("", verificationsHandler.List)
+			vG.GET("/:id", verificationsHandler.GetByID)
+			vG.POST("/:id/approve", verificationsHandler.Approve)
+			vG.POST("/:id/reject", verificationsHandler.Reject)
 		}
 
 		// Chat Moderation

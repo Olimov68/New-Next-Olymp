@@ -13,6 +13,7 @@ import {
   Medal,
   Award,
   Users,
+  UserCheck,
   LogOut,
   Menu,
   X,
@@ -35,6 +36,7 @@ const allNavItems: NavItem[] = [
   { href: "/admin/results", label: "Natijalar", icon: Medal, module: "results" },
   { href: "/admin/certificates", label: "Sertifikatlar", icon: Award, module: "certificates" },
   { href: "/admin/users", label: "Foydalanuvchilar", icon: Users, module: "users" },
+  { href: "/admin/verifications", label: "Tasdiqlash", icon: UserCheck, module: "users" },
   { href: "/admin/chat", label: "Chat moderatsiya", icon: MessageCircle, module: "chat" },
 ];
 

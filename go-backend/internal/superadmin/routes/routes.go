@@ -8,6 +8,8 @@ import (
 
 	"github.com/nextolympservice/go-backend/internal/chat"
 
+	adminverifications "github.com/nextolympservice/go-backend/internal/admin/verifications"
+
 	saadmins "github.com/nextolympservice/go-backend/internal/superadmin/admins"
 	saaudit "github.com/nextolympservice/go-backend/internal/superadmin/audit"
 	sacerts "github.com/nextolympservice/go-backend/internal/superadmin/certificates"
@@ -45,6 +47,7 @@ paymentsHandler := sapayments.NewHandler(db)
 	auditHandler := saaudit.NewHandler(db)
 	settingsHandler := sasettings.NewHandler(db)
 	promosHandler := sapromos.NewHandler(db)
+	verificationsHandler := adminverifications.NewHandler(db)
 
 	// Superadmin group
 	sa := api.Group("/superadmin")
@@ -196,6 +199,15 @@ paymentsHandler := sapayments.NewHandler(db)
 		{
 			sG.GET("", settingsHandler.GetAll)
 			sG.PUT("", settingsHandler.Update)
+		}
+
+		// Verifications
+		vG := sa.Group("/verifications")
+		{
+			vG.GET("", verificationsHandler.List)
+			vG.GET("/:id", verificationsHandler.GetByID)
+			vG.POST("/:id/approve", verificationsHandler.Approve)
+			vG.POST("/:id/reject", verificationsHandler.Reject)
 		}
 
 		// Chat moderation

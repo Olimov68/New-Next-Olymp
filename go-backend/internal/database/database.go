@@ -99,6 +99,8 @@ func Migrate(db *gorm.DB) error {
 		// Anti-cheat & Security events
 		&models.AntiCheatViolation{},
 		&models.SuspiciousEvent{},
+		// User verification
+		&models.UserVerification{},
 	)
 	if err != nil {
 		return fmt.Errorf("migration failed: %w", err)

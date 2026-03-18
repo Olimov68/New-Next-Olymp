@@ -28,8 +28,9 @@ type SuperAdminStats struct {
 	TotalPayments     int64   `json:"total_payments"`
 	TotalCertificates int64   `json:"total_certificates"`
 	ActivePromoCodes  int64   `json:"active_promo_codes"`
-	TotalRevenue      float64 `json:"total_revenue"`
-	WeeklyNewUsers    int64   `json:"weekly_new_users"`
+	TotalRevenue         float64 `json:"total_revenue"`
+	WeeklyNewUsers       int64   `json:"weekly_new_users"`
+	PendingVerifications int64   `json:"pending_verifications"`
 }
 
 type LatestUser struct {
@@ -63,6 +64,7 @@ func (h *Handler) Stats(c *gin.Context) {
 	h.db.Raw("SELECT COUNT(*) FROM promo_codes WHERE status = 'active'").Scan(&stats.ActivePromoCodes)
 	h.db.Raw("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'completed'").Scan(&stats.TotalRevenue)
 	h.db.Raw("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days' AND status != 'deleted'").Scan(&stats.WeeklyNewUsers)
+	h.db.Raw("SELECT COUNT(*) FROM user_verifications WHERE status = 'pending'").Scan(&stats.PendingVerifications)
 
 	// Latest users
 	var latestUsers []models.User
