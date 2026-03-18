@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getUsers, getUser, createUser, blockUser, unblockUser, verifyUser, deleteUser } from "@/lib/superadmin-api";
+import { getUsers, getUser, createUser, blockUser, unblockUser, verifyUser, deleteUser, approveVerification, rejectVerification, getVerifications } from "@/lib/superadmin-api";
 import { normalizeList } from "@/lib/normalizeList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Trash2, ShieldOff, Shield, ChevronLeft, ChevronRight, Eye, Plus, CheckCircle, Loader2 } from "lucide-react";
+import { Search, Trash2, ShieldOff, Shield, ChevronLeft, ChevronRight, Eye, Plus, CheckCircle, UserX, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { regions } from "@/lib/regions";
 
@@ -22,6 +22,7 @@ interface User {
   grade: number;
   status: string;
   is_profile_completed: boolean;
+  is_telegram_linked: boolean;
   created_at: string;
 }
 
@@ -32,7 +33,6 @@ interface UserDetail extends User {
   district: string;
   birth_date: string;
   updated_at: string;
-  is_telegram_linked: boolean;
 }
 
 export default function UsersPage() {
@@ -49,6 +49,8 @@ export default function UsersPage() {
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [creating, setCreating] = useState(false);
+  const [rejectDialog, setRejectDialog] = useState<number | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const limit = 20;
 
   const fetchUsers = async () => {
@@ -88,14 +90,51 @@ export default function UsersPage() {
     }
   };
 
-  const handleVerify = async (id: number) => {
+  const handleApproveUser = async (userId: number, note?: string) => {
     try {
-      await verifyUser(id);
-      toast.success("Foydalanuvchi tasdiqlandi");
+      const res = await getVerifications({ status: "pending" });
+      const items = res?.data || [];
+      const item = items.find((v: any) => v.user_id === userId);
+      if (item) {
+        await approveVerification(item.id, { note });
+        toast.success("Foydalanuvchi tasdiqlandi");
+      } else {
+        // Fallback to old verify
+        await verifyUser(userId);
+        toast.success("Foydalanuvchi tasdiqlandi");
+      }
       fetchUsers();
       setViewUser(null);
     } catch (e: any) {
-      toast.error(e?.response?.data?.message || "Xatolik");
+      toast.error(e?.response?.data?.message || e?.message || "Xatolik");
+    }
+  };
+
+  const handleVerify = async (id: number) => {
+    await handleApproveUser(id);
+  };
+
+  const handleRejectUser = async (userId: number) => {
+    if (!rejectReason.trim()) {
+      toast.error("Rad etish sababini kiriting");
+      return;
+    }
+    try {
+      const res = await getVerifications({ status: "pending" });
+      const items = res?.data || [];
+      const item = items.find((v: any) => v.user_id === userId);
+      if (item) {
+        await rejectVerification(item.id, { reason: rejectReason.trim() });
+        toast.success("Foydalanuvchi rad etildi");
+      } else {
+        toast.error("Tasdiqlash so'rovi topilmadi");
+      }
+      fetchUsers();
+      setViewUser(null);
+      setRejectDialog(null);
+      setRejectReason("");
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || e?.message || "Xatolik");
     }
   };
 
@@ -204,7 +243,7 @@ export default function UsersPage() {
                 <TableCell>
                   <div className="flex items-center gap-1.5">
                     <Badge className={u.status === "active" ? "bg-green-600" : "bg-red-600"}>{u.status}</Badge>
-                    {!u.is_profile_completed && (
+                    {u.is_profile_completed && !u.is_telegram_linked && (
                       <Badge variant="outline" className="text-xs bg-yellow-500/10 text-yellow-600 border-yellow-500/20">Tasdiqlanmagan</Badge>
                     )}
                   </div>
@@ -215,10 +254,15 @@ export default function UsersPage() {
                     <Button size="sm" variant="ghost" onClick={() => handleViewUser(u.id)} title="Ko'rish">
                       <Eye className="w-4 h-4 text-blue-400" />
                     </Button>
-                    {!u.is_profile_completed && (
-                      <Button size="sm" variant="ghost" onClick={() => handleVerify(u.id)} title="Tasdiqlash">
-                        <CheckCircle className="w-4 h-4 text-emerald-400" />
-                      </Button>
+                    {u.is_profile_completed && !u.is_telegram_linked && (
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => handleVerify(u.id)} title="Tasdiqlash">
+                          <CheckCircle className="w-4 h-4 text-emerald-400" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setRejectDialog(u.id)} title="Rad etish">
+                          <UserX className="w-4 h-4 text-red-400" />
+                        </Button>
+                      </>
                     )}
                     <Button size="sm" variant="ghost" onClick={() => handleBlock(u.id, u.status === "blocked")} title={u.status === "blocked" ? "Blokdan chiqarish" : "Bloklash"}>
                       {u.status === "blocked" ? <Shield className="w-4 h-4 text-green-400" /> : <ShieldOff className="w-4 h-4 text-yellow-400" />}
@@ -309,17 +353,47 @@ export default function UsersPage() {
                 <div><Label className="text-muted-foreground text-xs">Yaratilgan</Label><p className="text-sm">{new Date(viewUser.created_at).toLocaleString()}</p></div>
               </div>
 
-              {/* Verify button in detail view */}
-              {!viewUser.is_profile_completed && (
-                <div className="pt-2 border-t border-border">
-                  <Button onClick={() => handleVerify(viewUser.id)} className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700">
+              {/* Verify/Reject buttons in detail view */}
+              {viewUser.is_profile_completed && !viewUser.is_telegram_linked && (
+                <div className="pt-2 border-t border-border flex gap-2">
+                  <Button onClick={() => handleVerify(viewUser.id)} className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700">
                     <CheckCircle className="h-4 w-4" />
-                    Foydalanuvchini tasdiqlash
+                    Tasdiqlash
+                  </Button>
+                  <Button onClick={() => { setRejectDialog(viewUser.id); setViewUser(null); }} variant="destructive" className="flex-1 gap-2">
+                    <UserX className="h-4 w-4" />
+                    Rad etish
                   </Button>
                 </div>
               )}
             </div>
           ) : null}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectDialog !== null} onOpenChange={() => { setRejectDialog(null); setRejectReason(""); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Foydalanuvchini rad etish</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Rad etish sababi *</Label>
+              <Input
+                placeholder="Sababni kiriting..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setRejectDialog(null); setRejectReason(""); }}>Bekor qilish</Button>
+            <Button variant="destructive" onClick={() => rejectDialog && handleRejectUser(rejectDialog)} className="gap-2">
+              <UserX className="h-4 w-4" />
+              Rad etish
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

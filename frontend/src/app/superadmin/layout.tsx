@@ -22,7 +22,6 @@ import {
   X,
   GraduationCap,
   Tag,
-  UserCheck,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -30,8 +29,7 @@ const navItems = [
   { href: "/superadmin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/superadmin/admins", label: "Adminlar", icon: ShieldCheck },
   { href: "/superadmin/users", label: "Foydalanuvchilar", icon: Users },
-  { href: "/superadmin/verifications", label: "Tasdiqlash", icon: UserCheck },
-  { href: "/superadmin/olympiads", label: "Olimpiadalar", icon: Trophy },
+{ href: "/superadmin/olympiads", label: "Olimpiadalar", icon: Trophy },
   { href: "/superadmin/mock-tests", label: "Mock testlar", icon: GraduationCap },
   { href: "/superadmin/news", label: "Yangiliklar", icon: Newspaper },
   { href: "/superadmin/certificates", label: "Sertifikatlar", icon: Award },
