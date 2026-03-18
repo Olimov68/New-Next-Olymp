@@ -117,7 +117,7 @@ export function useChat(config: UseChatConfig) {
       .replace("https://", "wss://")
       .replace("http://", "ws://");
 
-    const ws = new WebSocket(`${wsUrl}/user/chat/ws`);
+    const ws = new WebSocket(`${wsUrl}/user/chat/ws?token=${config.token}`);
     wsRef.current = ws;
 
     ws.onopen = () => {
