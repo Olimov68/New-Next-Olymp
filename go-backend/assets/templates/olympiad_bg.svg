@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1122 794" width="1122" height="794">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f1729"/>
+      <stop offset="50%" stop-color="#152036"/>
+      <stop offset="100%" stop-color="#1a2744"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d4a843"/>
+      <stop offset="50%" stop-color="#f0d078"/>
+      <stop offset="100%" stop-color="#d4a843"/>
+    </linearGradient>
+    <linearGradient id="goldGradV" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d4a843"/>
+      <stop offset="50%" stop-color="#f0d078"/>
+      <stop offset="100%" stop-color="#d4a843"/>
+    </linearGradient>
+    <radialGradient id="glowCenter" cx="50%" cy="35%" r="50%">
+      <stop offset="0%" stop-color="#1e3055" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="goldGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Corner ornament pattern -->
+    <g id="cornerOrnament">
+      <path d="M0,0 L60,0 L60,4 L4,4 L4,60 L0,60 Z" fill="url(#goldGrad)" opacity="0.9"/>
+      <path d="M10,10 L50,10 L50,13 L13,13 L13,50 L10,50 Z" fill="url(#goldGrad)" opacity="0.6"/>
+      <path d="M20,20 L40,20 L40,22 L22,22 L22,40 L20,40 Z" fill="url(#goldGrad)" opacity="0.4"/>
+      <circle cx="8" cy="8" r="3" fill="#d4a843" opacity="0.8"/>
+      <circle cx="18" cy="18" r="2" fill="#d4a843" opacity="0.5"/>
+      <!-- Diamond accents -->
+      <polygon points="35,5 38,8 35,11 32,8" fill="#f0d078" opacity="0.7"/>
+      <polygon points="5,35 8,38 5,41 2,38" fill="#f0d078" opacity="0.7"/>
+    </g>
+    <!-- Laurel leaf -->
+    <g id="laurelLeft">
+      <path d="M0,-8 C4,-6 6,-2 4,4 C2,0 -2,-2 0,-8Z" fill="none" stroke="#d4a843" stroke-width="0.8" opacity="0.7"/>
+    </g>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1122" height="794" fill="url(#bgGrad)"/>
+
+  <!-- Subtle center glow -->
+  <ellipse cx="561" cy="300" rx="500" ry="350" fill="url(#glowCenter)"/>
+
+  <!-- Subtle dot pattern overlay -->
+  <g opacity="0.03">
+    <pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+      <circle cx="10" cy="10" r="1" fill="#ffffff"/>
+    </pattern>
+    <rect width="1122" height="794" fill="url(#dots)"/>
+  </g>
+
+  <!-- Main border -->
+  <rect x="30" y="30" width="1062" height="734" rx="10" ry="10" fill="none" stroke="url(#goldGrad)" stroke-width="2" opacity="0.8"/>
+
+  <!-- Inner border -->
+  <rect x="40" y="40" width="1042" height="714" rx="8" ry="8" fill="none" stroke="#d4a843" stroke-width="0.5" opacity="0.3"/>
+
+  <!-- Corner ornaments - Top Left -->
+  <g transform="translate(30,30)">
+    <use href="#cornerOrnament"/>
+  </g>
+
+  <!-- Corner ornaments - Top Right -->
+  <g transform="translate(1092,30) scale(-1,1)">
+    <use href="#cornerOrnament"/>
+  </g>
+
+  <!-- Corner ornaments - Bottom Left -->
+  <g transform="translate(30,764) scale(1,-1)">
+    <use href="#cornerOrnament"/>
+  </g>
+
+  <!-- Corner ornaments - Bottom Right -->
+  <g transform="translate(1092,764) scale(-1,-1)">
+    <use href="#cornerOrnament"/>
+  </g>
+
+  <!-- Top decorative line -->
+  <line x1="150" y1="70" x2="972" y2="70" stroke="#d4a843" stroke-width="0.5" opacity="0.3"/>
+
+  <!-- Laurel wreath / trophy area at top center -->
+  <g transform="translate(561, 110)" filter="url(#goldGlow)">
+    <!-- Trophy cup outline -->
+    <g fill="none" stroke="#d4a843" stroke-width="1.5" opacity="0.6">
+      <!-- Cup body -->
+      <path d="M-20,-25 L-25,-5 C-25,10 -15,20 0,22 C15,20 25,10 25,-5 L20,-25 Z"/>
+      <!-- Cup handles -->
+      <path d="M-25,-15 C-35,-15 -38,-5 -35,5 C-32,12 -28,12 -25,5"/>
+      <path d="M25,-15 C35,-15 38,-5 35,5 C32,12 28,12 25,5"/>
+      <!-- Base -->
+      <path d="M-5,22 L-5,30 L-12,35 L12,35 L5,30 L5,22"/>
+      <!-- Star on cup -->
+      <polygon points="0,-15 3,-8 10,-8 4,-3 6,4 0,0 -6,4 -4,-3 -10,-8 -3,-8" fill="#d4a843" fill-opacity="0.15" stroke="#d4a843" stroke-width="0.8"/>
+    </g>
+
+    <!-- Laurel branches -->
+    <g opacity="0.5">
+      <!-- Left branch -->
+      <g transform="translate(-35,0)">
+        <path d="M10,-30 C5,-20 3,-10 5,5" fill="none" stroke="#d4a843" stroke-width="1"/>
+        <ellipse cx="3" cy="-25" rx="5" ry="3" transform="rotate(-30,3,-25)" fill="none" stroke="#d4a843" stroke-width="0.8"/>
+        <ellipse cx="1" cy="-18" rx="5" ry="3" transform="rotate(-20,1,-18)" fill="none" stroke="#d4a843" stroke-width="0.8"/>
+        <ellipse cx="1" cy="-11" rx="5" ry="3" transform="rotate(-10,1,-11)" fill="none" stroke="#d4a843" stroke-width="0.8"/>
+        <ellipse cx="2" cy="-4" rx="5" ry="3" transform="rotate(0,2,-4)" fill="none" stroke="#d4a843" stroke-width="0.8"/>
+      </g>
+      <!-- Right branch -->
+      <g transform="translate(35,0) scale(-1,1)">
+        <path d="M10,-30 C5,-20 3,-10 5,5" fill="none" stroke="#d4a843" stroke-width="1"/>
+        <ellipse cx="3" cy="-25" rx="5" ry="3" transform="rotate(-30,3,-25)" fill="none" stroke="#d4a843" stroke-width="0.8"/>
+        <ellipse cx="1" cy="-18" rx="5" ry="3" transform="rotate(-20,1,-18)" fill="none" stroke="#d4a843" stroke-width="0.8"/>
+        <ellipse cx="1" cy="-11" rx="5" ry="3" transform="rotate(-10,1,-11)" fill="none" stroke="#d4a843" stroke-width="0.8"/>
+        <ellipse cx="2" cy="-4" rx="5" ry="3" transform="rotate(0,2,-4)" fill="none" stroke="#d4a843" stroke-width="0.8"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- NEXTOLYMP text area -->
+  <text x="561" y="175" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="14" fill="#d4a843" letter-spacing="8" opacity="0.6">NEXTOLYMP</text>
+
+  <!-- Decorative separator under title -->
+  <g transform="translate(561, 190)" opacity="0.4">
+    <line x1="-80" y1="0" x2="-15" y2="0" stroke="#d4a843" stroke-width="1"/>
+    <polygon points="0,-4 4,0 0,4 -4,0" fill="#d4a843"/>
+    <line x1="15" y1="0" x2="80" y2="0" stroke="#d4a843" stroke-width="1"/>
+  </g>
+
+  <!-- Side decorative elements - left -->
+  <g transform="translate(55, 397)" opacity="0.15">
+    <line x1="0" y1="-200" x2="0" y2="200" stroke="#d4a843" stroke-width="0.5" stroke-dasharray="2,8"/>
+  </g>
+
+  <!-- Side decorative elements - right -->
+  <g transform="translate(1067, 397)" opacity="0.15">
+    <line x1="0" y1="-200" x2="0" y2="200" stroke="#d4a843" stroke-width="0.5" stroke-dasharray="2,8"/>
+  </g>
+
+  <!-- Bottom decorative line -->
+  <line x1="150" y1="724" x2="972" y2="724" stroke="#d4a843" stroke-width="0.5" opacity="0.3"/>
+
+  <!-- Bottom area markers for QR and signature -->
+  <!-- QR code area hint (bottom left) -->
+  <rect x="80" y="660" width="80" height="80" rx="4" fill="none" stroke="#d4a843" stroke-width="0.5" opacity="0.15" stroke-dasharray="4,4"/>
+
+  <!-- Signature line area (bottom right) -->
+  <line x1="800" y1="720" x2="1000" y2="720" stroke="#d4a843" stroke-width="0.5" opacity="0.2"/>
+
+  <!-- Subtle geometric accent shapes -->
+  <g opacity="0.05">
+    <polygon points="561,50 571,70 551,70" fill="#d4a843"/>
+    <polygon points="561,744 571,724 551,724" fill="#d4a843"/>
+  </g>
+</svg>
