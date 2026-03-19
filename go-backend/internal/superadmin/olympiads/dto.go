@@ -128,6 +128,80 @@ type OlympiadResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// PaginationParams — common pagination query params
+type PaginationParams struct {
+	Page     int `form:"page,default=1"`
+	PageSize int `form:"page_size,default=20"`
+}
+
+// RegistrationResponse — single registration item for list endpoints
+type RegistrationResponse struct {
+	ID        uint   `json:"id"`
+	UserID    uint   `json:"user_id"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Status    string `json:"status"`
+	JoinedAt  string `json:"joined_at"`
+}
+
+// ResultResponse — single result item for results endpoint
+type ResultResponse struct {
+	ID         uint    `json:"id"`
+	UserID     uint    `json:"user_id"`
+	Username   string  `json:"username"`
+	FirstName  string  `json:"first_name"`
+	LastName   string  `json:"last_name"`
+	Score      float64 `json:"score"`
+	MaxScore   float64 `json:"max_score"`
+	Percentage float64 `json:"percentage"`
+	Correct    int     `json:"correct"`
+	Wrong      int     `json:"wrong"`
+	Rank       int     `json:"rank"`
+	TimeTaken  int     `json:"time_taken"`
+	Status     string  `json:"status"`
+}
+
+func ToRegistrationResponse(r *models.OlympiadRegistration) RegistrationResponse {
+	resp := RegistrationResponse{
+		ID:       r.ID,
+		UserID:   r.UserID,
+		Status:   string(r.Status),
+		JoinedAt: r.JoinedAt.Format(time.RFC3339),
+	}
+	if r.User != nil {
+		resp.Username = r.User.Username
+		if r.User.Profile != nil {
+			resp.FirstName = r.User.Profile.FirstName
+			resp.LastName = r.User.Profile.LastName
+		}
+	}
+	return resp
+}
+
+func ToResultResponse(a *models.OlympiadAttempt) ResultResponse {
+	resp := ResultResponse{
+		ID:         a.ID,
+		UserID:     a.UserID,
+		Score:      a.Score,
+		MaxScore:   a.MaxScore,
+		Percentage: a.Percentage,
+		Correct:    a.Correct,
+		Wrong:      a.Wrong,
+		Rank:       a.Rank,
+		TimeTaken:  a.TimeTaken,
+		Status:     a.Status,
+	}
+	if a.User != nil {
+		resp.Username = a.User.Username
+		if a.User.Profile != nil {
+			resp.FirstName = a.User.Profile.FirstName
+			resp.LastName = a.User.Profile.LastName
+		}
+	}
+	return resp
+}
+
 func ToResponse(o *models.Olympiad) OlympiadResponse {
 	return OlympiadResponse{
 		ID:             o.ID,

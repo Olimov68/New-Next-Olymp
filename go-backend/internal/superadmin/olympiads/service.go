@@ -212,6 +212,56 @@ func (s *Service) Delete(id uint) error {
 	return s.repo.Delete(id)
 }
 
+// ListRegistrations returns paginated registrations for an olympiad
+func (s *Service) ListRegistrations(olympiadID uint, page, pageSize int) ([]models.OlympiadRegistration, int64, error) {
+	return s.repo.ListRegistrations(olympiadID, nil, page, pageSize)
+}
+
+// ListParticipants returns registrations with status participant or completed
+func (s *Service) ListParticipants(olympiadID uint, page, pageSize int) ([]models.OlympiadRegistration, int64, error) {
+	return s.repo.ListRegistrations(olympiadID, []string{"participant", "completed"}, page, pageSize)
+}
+
+// ListResults returns paginated attempt results for an olympiad
+func (s *Service) ListResults(olympiadID uint, page, pageSize int) ([]models.OlympiadAttempt, int64, error) {
+	return s.repo.ListAttempts(olympiadID, page, pageSize)
+}
+
+// ApproveResult sets the attempt status to approved
+func (s *Service) ApproveResult(resultID uint) error {
+	return s.repo.UpdateAttempt(resultID, map[string]interface{}{"status": "approved"})
+}
+
+// Duplicate clones an olympiad with a new slug and draft status
+func (s *Service) Duplicate(id uint) (*models.Olympiad, error) {
+	src, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	dup := *src
+	dup.ID = 0
+	dup.Slug = fmt.Sprintf("%s-copy-%d", src.Slug, time.Now().Unix())
+	dup.Status = models.OlympiadStatusDraft
+	dup.CreatedAt = time.Time{}
+	dup.UpdatedAt = time.Time{}
+
+	if err := s.repo.Create(&dup); err != nil {
+		return nil, err
+	}
+	return &dup, nil
+}
+
+// Publish sets the olympiad status to published
+func (s *Service) Publish(id uint) error {
+	return s.repo.UpdateStatus(id, string(models.OlympiadStatusPublished))
+}
+
+// Unpublish sets the olympiad status to draft
+func (s *Service) Unpublish(id uint) error {
+	return s.repo.UpdateStatus(id, string(models.OlympiadStatusDraft))
+}
+
 func generateSlug(title string) string {
 	slug := strings.ToLower(strings.TrimSpace(title))
 	slug = strings.Map(func(r rune) rune {

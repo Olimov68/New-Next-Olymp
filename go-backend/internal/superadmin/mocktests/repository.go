@@ -64,3 +64,64 @@ func (r *Repository) Update(id uint, fields map[string]interface{}) error {
 func (r *Repository) Delete(id uint) error {
 	return r.db.Delete(&models.MockTest{}, id).Error
 }
+
+// ListRegistrations returns paginated registrations for a mock test
+func (r *Repository) ListRegistrations(mockTestID uint, page, pageSize int) ([]models.MockTestRegistration, int64, error) {
+	var list []models.MockTestRegistration
+	var total int64
+	q := r.db.Model(&models.MockTestRegistration{}).Where("mock_test_id = ?", mockTestID)
+	q.Count(&total)
+	offset := (page - 1) * pageSize
+	err := q.Preload("User").Preload("User.Profile").
+		Order("joined_at DESC").Offset(offset).Limit(pageSize).
+		Find(&list).Error
+	return list, total, err
+}
+
+// ListParticipants returns registrations where user completed or has in-progress attempts
+func (r *Repository) ListParticipants(mockTestID uint, page, pageSize int) ([]models.MockTestRegistration, int64, error) {
+	var list []models.MockTestRegistration
+	var total int64
+	q := r.db.Model(&models.MockTestRegistration{}).
+		Where("mock_test_id = ?", mockTestID).
+		Where("status = ? OR user_id IN (?)",
+			models.MockTestRegStatusCompleted,
+			r.db.Model(&models.MockAttempt{}).Select("user_id").Where("mock_test_id = ?", mockTestID),
+		)
+	q.Count(&total)
+	offset := (page - 1) * pageSize
+	err := q.Preload("User").Preload("User.Profile").
+		Order("joined_at DESC").Offset(offset).Limit(pageSize).
+		Find(&list).Error
+	return list, total, err
+}
+
+// ListResults returns paginated mock attempts for a mock test
+func (r *Repository) ListResults(mockTestID uint, page, pageSize int) ([]models.MockAttempt, int64, error) {
+	var list []models.MockAttempt
+	var total int64
+	q := r.db.Model(&models.MockAttempt{}).Where("mock_test_id = ?", mockTestID)
+	q.Count(&total)
+	offset := (page - 1) * pageSize
+	err := q.Preload("User").Preload("User.Profile").
+		Order("created_at DESC").Offset(offset).Limit(pageSize).
+		Find(&list).Error
+	return list, total, err
+}
+
+// GetAttemptByID returns a single mock attempt by ID
+func (r *Repository) GetAttemptByID(id uint) (*models.MockAttempt, error) {
+	var a models.MockAttempt
+	err := r.db.First(&a, id).Error
+	return &a, err
+}
+
+// UpdateAttempt updates fields on a mock attempt
+func (r *Repository) UpdateAttempt(id uint, fields map[string]interface{}) error {
+	return r.db.Model(&models.MockAttempt{}).Where("id = ?", id).Updates(fields).Error
+}
+
+// UpdateStatus sets the status of a mock test
+func (r *Repository) UpdateStatus(id uint, status models.MockTestStatus) error {
+	return r.db.Model(&models.MockTest{}).Where("id = ?", id).Update("status", status).Error
+}

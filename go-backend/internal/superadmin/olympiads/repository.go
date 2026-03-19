@@ -64,3 +64,54 @@ func (r *Repository) Update(id uint, fields map[string]interface{}) error {
 func (r *Repository) Delete(id uint) error {
 	return r.db.Delete(&models.Olympiad{}, id).Error
 }
+
+// ListRegistrations returns paginated registrations for an olympiad with user info
+func (r *Repository) ListRegistrations(olympiadID uint, statuses []string, page, pageSize int) ([]models.OlympiadRegistration, int64, error) {
+	var list []models.OlympiadRegistration
+	var total int64
+	q := r.db.Model(&models.OlympiadRegistration{}).Where("olympiad_id = ?", olympiadID)
+	if len(statuses) > 0 {
+		q = q.Where("status IN ?", statuses)
+	}
+	q.Count(&total)
+	offset := (page - 1) * pageSize
+	err := q.Preload("User").Preload("User.Profile").
+		Order("joined_at DESC").Offset(offset).Limit(pageSize).
+		Find(&list).Error
+	return list, total, err
+}
+
+// ListAttempts returns paginated attempts for an olympiad with user info
+func (r *Repository) ListAttempts(olympiadID uint, page, pageSize int) ([]models.OlympiadAttempt, int64, error) {
+	var list []models.OlympiadAttempt
+	var total int64
+	q := r.db.Model(&models.OlympiadAttempt{}).Where("olympiad_id = ?", olympiadID)
+	q.Count(&total)
+	offset := (page - 1) * pageSize
+	err := q.Preload("User").Preload("User.Profile").
+		Order("rank ASC, score DESC").Offset(offset).Limit(pageSize).
+		Find(&list).Error
+	return list, total, err
+}
+
+// GetAttemptByID returns a single attempt by ID
+func (r *Repository) GetAttemptByID(id uint) (*models.OlympiadAttempt, error) {
+	var a models.OlympiadAttempt
+	err := r.db.First(&a, id).Error
+	return &a, err
+}
+
+// UpdateAttempt updates fields on an attempt
+func (r *Repository) UpdateAttempt(id uint, fields map[string]interface{}) error {
+	return r.db.Model(&models.OlympiadAttempt{}).Where("id = ?", id).Updates(fields).Error
+}
+
+// CreateOlympiad creates a new olympiad (used by Duplicate)
+func (r *Repository) CreateOlympiad(o *models.Olympiad) error {
+	return r.db.Create(o).Error
+}
+
+// UpdateStatus updates only the status of an olympiad
+func (r *Repository) UpdateStatus(id uint, status string) error {
+	return r.db.Model(&models.Olympiad{}).Where("id = ?", id).Update("status", status).Error
+}

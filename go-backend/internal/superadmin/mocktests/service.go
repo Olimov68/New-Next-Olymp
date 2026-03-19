@@ -211,6 +211,65 @@ func (s *Service) Delete(id uint) error {
 	return s.repo.Delete(id)
 }
 
+func (s *Service) ListRegistrations(mockTestID uint, page, pageSize int) ([]models.MockTestRegistration, int64, error) {
+	return s.repo.ListRegistrations(mockTestID, page, pageSize)
+}
+
+func (s *Service) ListParticipants(mockTestID uint, page, pageSize int) ([]models.MockTestRegistration, int64, error) {
+	return s.repo.ListParticipants(mockTestID, page, pageSize)
+}
+
+func (s *Service) ListResults(mockTestID uint, page, pageSize int) ([]models.MockAttempt, int64, error) {
+	return s.repo.ListResults(mockTestID, page, pageSize)
+}
+
+func (s *Service) ApproveResult(resultID uint) error {
+	attempt, err := s.repo.GetAttemptByID(resultID)
+	if err != nil {
+		return err
+	}
+	_ = attempt
+	return s.repo.UpdateAttempt(resultID, map[string]interface{}{
+		"status": "approved",
+	})
+}
+
+func (s *Service) Duplicate(id uint) (*models.MockTest, error) {
+	orig, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+	clone := *orig
+	clone.ID = 0
+	clone.Status = models.MockTestStatusDraft
+
+	// Generate unique slug
+	slug := orig.Slug + "-copy"
+	base := slug
+	counter := 1
+	for s.repo.SlugExists(slug) {
+		slug = fmt.Sprintf("%s-%d", base, counter)
+		counter++
+	}
+	clone.Slug = slug
+	clone.Title = orig.Title + " (Copy)"
+	clone.CreatedAt = time.Time{}
+	clone.UpdatedAt = time.Time{}
+
+	if err := s.repo.Create(&clone); err != nil {
+		return nil, err
+	}
+	return &clone, nil
+}
+
+func (s *Service) Publish(id uint) error {
+	return s.repo.UpdateStatus(id, models.MockTestStatusPublished)
+}
+
+func (s *Service) Unpublish(id uint) error {
+	return s.repo.UpdateStatus(id, models.MockTestStatusDraft)
+}
+
 func generateSlug(title string) string {
 	slug := strings.ToLower(strings.TrimSpace(title))
 	slug = strings.Map(func(r rune) rune {

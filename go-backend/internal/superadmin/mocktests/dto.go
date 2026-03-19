@@ -131,6 +131,88 @@ type MockTestResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// PaginationParams — common pagination query params
+type PaginationParams struct {
+	Page     int `form:"page,default=1"`
+	PageSize int `form:"page_size,default=20"`
+}
+
+// RegistrationResponse — registration list item
+type RegistrationResponse struct {
+	ID         uint      `json:"id"`
+	UserID     uint      `json:"user_id"`
+	MockTestID uint      `json:"mock_test_id"`
+	Status     string    `json:"status"`
+	JoinedAt   time.Time `json:"joined_at"`
+	Username   string    `json:"username"`
+	FirstName  string    `json:"first_name,omitempty"`
+	LastName   string    `json:"last_name,omitempty"`
+}
+
+func ToRegistrationResponse(r *models.MockTestRegistration) RegistrationResponse {
+	resp := RegistrationResponse{
+		ID:         r.ID,
+		UserID:     r.UserID,
+		MockTestID: r.MockTestID,
+		Status:     string(r.Status),
+		JoinedAt:   r.JoinedAt,
+	}
+	if r.User != nil {
+		resp.Username = r.User.Username
+		if r.User.Profile != nil {
+			resp.FirstName = r.User.Profile.FirstName
+			resp.LastName = r.User.Profile.LastName
+		}
+	}
+	return resp
+}
+
+// ResultResponse — attempt/result list item
+type ResultResponse struct {
+	ID          uint      `json:"id"`
+	UserID      uint      `json:"user_id"`
+	Username    string    `json:"username"`
+	FirstName   string    `json:"first_name,omitempty"`
+	LastName    string    `json:"last_name,omitempty"`
+	Score       float64   `json:"score"`
+	MaxScore    float64   `json:"max_score"`
+	Percentage  float64   `json:"percentage"`
+	ThetaScore  *float64  `json:"theta_score,omitempty"`
+	ZScore      *float64  `json:"z_score,omitempty"`
+	TScore      *float64  `json:"t_score,omitempty"`
+	ScaledScore *float64  `json:"scaled_score,omitempty"`
+	GradeLabel  string    `json:"grade_label,omitempty"`
+	TimeTaken   int       `json:"time_taken"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+func ToResultResponse(a *models.MockAttempt) ResultResponse {
+	resp := ResultResponse{
+		ID:          a.ID,
+		UserID:      a.UserID,
+		Score:       a.Score,
+		MaxScore:    a.MaxScore,
+		Percentage:  a.Percentage,
+		ThetaScore:  a.ThetaScore,
+		ZScore:      a.ZScore,
+		TScore:      a.TScore,
+		ScaledScore: a.ScaledScore,
+		GradeLabel:  a.GradeLabel,
+		TimeTaken:   a.TimeTaken,
+		Status:      a.Status,
+		CreatedAt:   a.CreatedAt,
+	}
+	if a.User != nil {
+		resp.Username = a.User.Username
+		if a.User.Profile != nil {
+			resp.FirstName = a.User.Profile.FirstName
+			resp.LastName = a.User.Profile.LastName
+		}
+	}
+	return resp
+}
+
 func ToResponse(m *models.MockTest) MockTestResponse {
 	return MockTestResponse{
 		ID:                    m.ID,

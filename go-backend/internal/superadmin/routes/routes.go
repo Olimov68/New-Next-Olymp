@@ -89,6 +89,15 @@ paymentsHandler := sapayments.NewHandler(db)
 			oG.GET("/:id", olympiadsHandler.GetByID)
 			oG.PUT("/:id", olympiadsHandler.Update)
 			oG.DELETE("/:id", olympiadsHandler.Delete)
+
+			// Sub-resource endpoints
+			oG.GET("/:id/registrations", olympiadsHandler.ListRegistrations)
+			oG.GET("/:id/participants", olympiadsHandler.ListParticipants)
+			oG.GET("/:id/results", olympiadsHandler.ListResults)
+			oG.POST("/:id/results/:result_id/approve", olympiadsHandler.ApproveResult)
+			oG.POST("/:id/duplicate", olympiadsHandler.Duplicate)
+			oG.PATCH("/:id/publish", olympiadsHandler.Publish)
+			oG.PATCH("/:id/unpublish", olympiadsHandler.Unpublish)
 		}
 
 		// Mock tests management
@@ -99,6 +108,15 @@ paymentsHandler := sapayments.NewHandler(db)
 			mG.GET("/:id", mockTestsHandler.GetByID)
 			mG.PUT("/:id", mockTestsHandler.Update)
 			mG.DELETE("/:id", mockTestsHandler.Delete)
+
+			// Sub-resource endpoints
+			mG.GET("/:id/registrations", mockTestsHandler.ListRegistrations)
+			mG.GET("/:id/participants", mockTestsHandler.ListParticipants)
+			mG.GET("/:id/results", mockTestsHandler.ListResults)
+			mG.POST("/:id/results/:result_id/approve", mockTestsHandler.ApproveResult)
+			mG.POST("/:id/duplicate", mockTestsHandler.Duplicate)
+			mG.PATCH("/:id/publish", mockTestsHandler.Publish)
+			mG.PATCH("/:id/unpublish", mockTestsHandler.Unpublish)
 		}
 
 		// Questions management
