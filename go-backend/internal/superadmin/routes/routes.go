@@ -7,6 +7,7 @@ import (
 	"github.com/nextolympservice/go-backend/internal/utils"
 	"gorm.io/gorm"
 
+	"github.com/nextolympservice/go-backend/internal/certgen"
 	"github.com/nextolympservice/go-backend/internal/chat"
 
 	adminverifications "github.com/nextolympservice/go-backend/internal/admin/verifications"
@@ -41,7 +42,13 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 	questionsHandler := saquestions.NewHandler(db)
 	resultsHandler := saresults.NewHandler(db)
 	newsHandler := sanews.NewHandler(db)
-	certsHandler := sacerts.NewHandler(db)
+	certGenerator := certgen.NewCertGenerator(
+		cfg.Upload.Dir,
+		"https://nextolymp.uz/verify-certificate",
+		"assets/fonts",
+		db,
+	)
+	certsHandler := sacerts.NewHandler(db, certGenerator, cfg.Upload.Dir)
 	templatesHandler := satemplates.NewHandler(db)
 paymentsHandler := sapayments.NewHandler(db)
 	permsHandler := saperms.NewHandler(db)
@@ -159,6 +166,9 @@ paymentsHandler := sapayments.NewHandler(db)
 			cG.POST("", certsHandler.Create)
 			cG.GET("/:id", certsHandler.GetByID)
 			cG.PUT("/:id", certsHandler.Update)
+			cG.POST("/:id/regenerate", certsHandler.Regenerate)
+			cG.POST("/:id/revoke", certsHandler.Revoke)
+			cG.GET("/:id/download", certsHandler.Download)
 		}
 
 		// Certificate templates

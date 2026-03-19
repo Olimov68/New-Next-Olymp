@@ -38,6 +38,9 @@ usermocktests "github.com/nextolympservice/go-backend/internal/user/mocktests"
 	useranticheat "github.com/nextolympservice/go-backend/internal/user/anticheat"
 	userresults "github.com/nextolympservice/go-backend/internal/user/results"
 
+	// Public verify
+	publicverify "github.com/nextolympservice/go-backend/internal/public/verify"
+
 	// Admin verifications (for user-facing verification status)
 	adminverifications "github.com/nextolympservice/go-backend/internal/admin/verifications"
 
@@ -113,7 +116,7 @@ func Setup(cfg *config.Config, db *gorm.DB, redisClient *cache.RedisClient) *gin
 	olympiadsHandler := userolympiads.NewHandler(userolympiads.NewService(userolympiads.NewRepository(db)))
 	mockTestsHandler := usermocktests.NewHandler(usermocktests.NewService(usermocktests.NewRepository(db)))
 	newsHandler := usernews.NewHandler(usernews.NewService(usernews.NewRepository(db)))
-	certsHandler := usercerts.NewHandler(usercerts.NewService(usercerts.NewRepository(db)))
+	certsHandler := usercerts.NewHandler(usercerts.NewService(usercerts.NewRepository(db)), cfg.Upload.Dir)
 examsHandler := userexams.NewHandler(db)
 	balanceHandler := userbalance.NewHandler(db)
 	notifsHandler := usernotifs.NewHandler(db)
@@ -216,6 +219,12 @@ examsHandler := userexams.NewHandler(db)
 	}
 
 	// ============================================================
+	// PUBLIC VERIFY — /api/v1/certificates/verify (auth talab qilinmaydi)
+	// ============================================================
+	verifyHandler := publicverify.NewHandler(db)
+	api.GET("/certificates/verify/:code", verifyHandler.VerifyCertificate)
+
+	// ============================================================
 	// PUBLIC STATS — /api/v1/stats (auth talab qilinmaydi)
 	// ============================================================
 	api.GET("/stats", func(c *gin.Context) {
@@ -302,6 +311,7 @@ examsHandler := userexams.NewHandler(db)
 		{
 			cg.GET("", certsHandler.List)
 			cg.GET("/:id", certsHandler.GetByID)
+			cg.GET("/:id/download", certsHandler.Download)
 		}
 
 		// Exam — test topshirish
