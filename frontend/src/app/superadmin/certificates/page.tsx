@@ -101,14 +101,15 @@ const sourceTypes = ["olympiad", "mock_test"];
 const gradeOptions = ["A+", "A", "B", "C", "D"];
 const statusOptions = ["active", "revoked"];
 
-function calcGrade(scaledScore: number): string {
-  if (scaledScore >= 95) return "A+";
-  if (scaledScore >= 85) return "A";
-  if (scaledScore >= 78) return "B+";
-  if (scaledScore >= 70) return "B";
-  if (scaledScore >= 65) return "C+";
-  if (scaledScore >= 60) return "C";
-  return ""; // sertifikat berilmaydi
+// Rasman baholash mezoni: T = 50 + 10Z
+function calcGrade(tScore: number): string {
+  if (tScore >= 70) return "A+";
+  if (tScore >= 65) return "A";
+  if (tScore >= 60) return "B+";
+  if (tScore >= 55) return "B";
+  if (tScore >= 50) return "C+";
+  if (tScore >= 46) return "C";
+  return ""; // 46 dan past — sertifikat berilmaydi
 }
 
 function typeBadge(type: string) {

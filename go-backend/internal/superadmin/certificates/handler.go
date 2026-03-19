@@ -93,10 +93,10 @@ func (h *Handler) Create(c *gin.Context) {
 		if grade == "" {
 			grade = models.CalculateGrade(req.ScaledScore)
 		}
-		// 60 dan past bo'lsa sertifikat berilmaydi
+		// T-ball 46 dan past bo'lsa sertifikat berilmaydi
 		if !models.IsEligibleForCertificate(req.ScaledScore) {
 			response.Error(c, http.StatusBadRequest,
-				"Scaled score 60 dan past — sertifikat berilmaydi. Foydalanuvchi sertifikat olish uchun kamida 60 ball to'plashi kerak.", nil)
+				"T-ball 46 dan past — sertifikat berilmaydi. Baholash mezoniga ko'ra kamida 46 ball (C daraja) talab qilinadi.", nil)
 			return
 		}
 	}

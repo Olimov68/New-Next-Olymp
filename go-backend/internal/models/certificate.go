@@ -53,28 +53,45 @@ type Certificate struct {
 
 func (Certificate) TableName() string { return "certificate" }
 
-// CalculateGrade — Rasch scaled score bo'yicha daraja hisoblash
-// 60 dan past = sertifikat berilmaydi
-func CalculateGrade(scaledScore float64) string {
+// CalculateGrade — Rasch T-ball (T = 50 + 10Z) asosida daraja hisoblash
+// Rasman baholash mezoniga asosan:
+// 70+    = A+  (maks ball)
+// 65-69.9 = A   (maks ball)
+// 60-64.9 = B+  (proporsional ball)
+// 55-59.9 = B   (proporsional ball)
+// 50-54.9 = C+  (proporsional ball)
+// 46-49.9 = C   (proporsional ball)
+// 46 dan past = sertifikat berilmaydi
+func CalculateGrade(tScore float64) string {
 	switch {
-	case scaledScore >= 95:
+	case tScore >= 70:
 		return "A+"
-	case scaledScore >= 85:
+	case tScore >= 65:
 		return "A"
-	case scaledScore >= 78:
+	case tScore >= 60:
 		return "B+"
-	case scaledScore >= 70:
+	case tScore >= 55:
 		return "B"
-	case scaledScore >= 65:
+	case tScore >= 50:
 		return "C+"
-	case scaledScore >= 60:
+	case tScore >= 46:
 		return "C"
 	default:
 		return "" // sertifikat berilmaydi
 	}
 }
 
-// IsEligibleForCertificate — sertifikat olish huquqi bormi
-func IsEligibleForCertificate(scaledScore float64) bool {
-	return scaledScore >= 60
+// IsEligibleForCertificate — sertifikat olish huquqi bormi (T-ball >= 46)
+func IsEligibleForCertificate(tScore float64) bool {
+	return tScore >= 46
+}
+
+// CalculateTScore — Rasch theta dan T-ball hisoblash
+// Formula: T = 50 + 10 * Z, Z = (theta - mu) / sigma
+func CalculateTScore(theta, mu, sigma float64) float64 {
+	if sigma == 0 {
+		return 50
+	}
+	z := (theta - mu) / sigma
+	return 50 + 10*z
 }
