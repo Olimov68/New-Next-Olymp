@@ -284,6 +284,78 @@ function PasswordTab() {
   );
 }
 
+// ─── Balance Tab ────────────────────────────────────────────────────────────
+
+function BalanceTab() {
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState<Array<{
+    id: number; amount: number; type: string; description: string; created_at: string;
+  }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      import("@/lib/user-api").then((m) => m.getBalance()),
+      import("@/lib/user-api").then((m) => m.getTransactions()),
+    ])
+      .then(([bal, txs]) => {
+        setBalance(bal?.balance ?? bal ?? 0);
+        setTransactions(Array.isArray(txs) ? txs : txs?.data ?? []);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <Loader2 className="h-5 w-5 animate-spin text-white/30" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Balance card */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-6 shadow-lg shadow-blue-500/20">
+        <p className="text-blue-100 text-sm mb-1">Joriy balans</p>
+        <p className="text-white text-3xl font-bold">
+          {Number(balance).toLocaleString()} so&apos;m
+        </p>
+      </div>
+
+      {/* Transactions */}
+      <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5">
+        <h3 className="text-sm font-semibold text-white mb-4">Tranzaksiyalar</h3>
+        {transactions.length === 0 ? (
+          <p className="text-sm text-white/30 text-center py-6">
+            Hozircha tranzaksiyalar yo&apos;q
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {transactions.slice(0, 20).map((tx) => (
+              <div
+                key={tx.id}
+                className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-white/[0.03] border border-white/5"
+              >
+                <div>
+                  <p className="text-sm text-white">{tx.description || tx.type}</p>
+                  <p className="text-[11px] text-white/30">
+                    {new Date(tx.created_at).toLocaleDateString("uz-UZ")}
+                  </p>
+                </div>
+                <span className={`text-sm font-semibold ${tx.amount >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {tx.amount >= 0 ? "+" : ""}{Number(tx.amount).toLocaleString()} so&apos;m
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Devices Tab ────────────────────────────────────────────────────────────
 
 function DevicesTab() {
@@ -928,29 +1000,29 @@ export default function ProfilePage() {
       <h1 className="text-xl font-bold text-white mb-5">{t("profile.title")}</h1>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-5 bg-white/5 border border-white/10 rounded-xl p-1 h-auto">
-          <TabsTrigger
-            value="profile"
-            className="rounded-lg py-2 text-sm font-medium text-white/50 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none transition-all"
-          >
-            Shaxsiy
-          </TabsTrigger>
-          <TabsTrigger
-            value="password"
-            className="rounded-lg py-2 text-sm font-medium text-white/50 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none transition-all"
-          >
-            Parol
-          </TabsTrigger>
-          <TabsTrigger
-            value="devices"
-            className="rounded-lg py-2 text-sm font-medium text-white/50 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none transition-all"
-          >
-            Qurilmalar
-          </TabsTrigger>
+        <TabsList className="flex w-full mb-5 bg-white/5 border border-white/10 rounded-xl p-1 gap-1">
+          {[
+            { value: "profile", label: "Shaxsiy" },
+            { value: "balance", label: "Balans" },
+            { value: "password", label: "Parol" },
+            { value: "devices", label: "Qurilmalar" },
+          ].map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className="flex-1 rounded-lg py-2 px-3 text-sm font-medium leading-none text-white/50 data-[state=active]:bg-white/10 data-[state=active]:text-white data-[state=active]:shadow-none transition-all"
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="profile">
           <ProfileForm isNewProfile={false} onProfileCompleted={() => setProfileCompleted(true)} />
+        </TabsContent>
+
+        <TabsContent value="balance">
+          <BalanceTab />
         </TabsContent>
 
         <TabsContent value="password">
