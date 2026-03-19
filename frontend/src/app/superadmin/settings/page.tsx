@@ -132,6 +132,19 @@ export default function SettingsPage() {
             <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
           </label>
         </div>
+
+        {/* Telegram Verification */}
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-sm font-medium">Telegram tasdiqlash</Label>
+            <p className="text-xs text-muted-foreground mt-1">Ro&apos;yxatdan o&apos;tishda Telegram bot orqali tasdiqlash talab qilinadi</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" checked={settings.telegram_verification_enabled || false} onChange={(e) => setSettings({ ...settings, telegram_verification_enabled: e.target.checked })}
+              className="sr-only peer" />
+            <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+          </label>
+        </div>
       </div>
 
       {settings.maintenance_mode && (

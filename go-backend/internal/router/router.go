@@ -200,11 +200,12 @@ examsHandler := userexams.NewHandler(db)
 			db.Create(&setting)
 		}
 		response.Success(c, 200, "Public settings", gin.H{
-			"platform_name":        setting.PlatformName,
-			"support_email":        setting.SupportEmail,
-			"maintenance_mode":     setting.MaintenanceMode,
-			"registration_enabled": setting.RegistrationEnabled,
-			"default_language":     setting.DefaultLanguage,
+			"platform_name":                  setting.PlatformName,
+			"support_email":                  setting.SupportEmail,
+			"maintenance_mode":               setting.MaintenanceMode,
+			"registration_enabled":           setting.RegistrationEnabled,
+			"telegram_verification_enabled":  setting.TelegramVerificationEnabled,
+			"default_language":               setting.DefaultLanguage,
 		})
 	})
 

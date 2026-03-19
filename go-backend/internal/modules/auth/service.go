@@ -30,6 +30,15 @@ func NewService(repo *Repository, jwt *utils.JWTManager) *Service {
 	return &Service{repo: repo, jwt: jwt}
 }
 
+// isTelegramEnabled — admin paneldan Telegram verification yoqilganmi tekshirish
+func (s *Service) isTelegramEnabled() bool {
+	var setting models.GlobalSetting
+	if err := s.repo.db.First(&setting).Error; err != nil {
+		return false // xatolik bo'lsa o'chirilgan deb hisoblash
+	}
+	return setting.TelegramVerificationEnabled
+}
+
 // SetSessionManager — session manager ni sozlash (router.go da chaqiriladi)
 func (s *Service) SetSessionManager(sm *utils.SessionManager) {
 	s.sessionMgr = sm
@@ -126,7 +135,7 @@ func (s *Service) Register(req *RegisterRequest, sessionInfo *SessionInfo) (*Reg
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
 		},
-		NextStep: DetermineNextStep(user),
+		NextStep: DetermineNextStep(user, s.isTelegramEnabled()),
 	}, nil
 }
 
@@ -185,7 +194,7 @@ func (s *Service) Login(req *LoginRequest, sessionInfo *SessionInfo) (*LoginResp
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
 		},
-		NextStep: DetermineNextStep(user),
+		NextStep: DetermineNextStep(user, s.isTelegramEnabled()),
 	}, nil
 }
 
@@ -244,7 +253,7 @@ func (s *Service) GetMe(userID uint) (*MeResponse, error) {
 	return &MeResponse{
 		User:     ToUserResponse(user),
 		Profile:  ToProfileResponse(user.Profile),
-		NextStep: DetermineNextStep(user),
+		NextStep: DetermineNextStep(user, s.isTelegramEnabled()),
 	}, nil
 }
 

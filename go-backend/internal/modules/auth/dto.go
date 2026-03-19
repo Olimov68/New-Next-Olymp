@@ -78,12 +78,13 @@ func ToUserResponse(u *models.User) UserResponse {
 	}
 }
 
-// DetermineNextStep returns the next step for the user
-func DetermineNextStep(u *models.User) string {
+// DetermineNextStep returns the next step for the user.
+// telegramEnabled — admin paneldan boshqariladigan sozlama.
+func DetermineNextStep(u *models.User, telegramEnabled bool) string {
 	if !u.IsProfileCompleted {
 		return "complete_profile"
 	}
-	if !u.IsTelegramLinked {
+	if telegramEnabled && !u.IsTelegramLinked {
 		return "link_telegram"
 	}
 	return "dashboard"
