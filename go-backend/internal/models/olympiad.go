@@ -58,6 +58,10 @@ type Olympiad struct {
 	ManualReview           bool `gorm:"default:false" json:"manual_review"`
 	AdminApproval          bool `gorm:"default:false" json:"admin_approval"`
 
+	// Ball tizimi — admin belgilaydi
+	MinScoreForCertificate int    `gorm:"default:0" json:"min_score_for_certificate"`   // sertifikat uchun minimal ball
+	ScoringRules           string `gorm:"type:text" json:"scoring_rules"`                // JSON: {"30":10,"28":8,...} to'g'ri javob soni→ball
+
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }

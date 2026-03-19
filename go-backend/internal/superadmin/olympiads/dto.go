@@ -39,6 +39,10 @@ type CreateRequest struct {
 	GiveCertificate       bool `json:"give_certificate"`
 	ManualReview          bool `json:"manual_review"`
 	AdminApproval         bool `json:"admin_approval"`
+
+	// Scoring
+	MinScoreForCertificate int    `json:"min_score_for_certificate"`
+	ScoringRules           string `json:"scoring_rules"`
 }
 
 type UpdateRequest struct {
@@ -74,6 +78,10 @@ type UpdateRequest struct {
 	GiveCertificate       *bool `json:"give_certificate"`
 	ManualReview          *bool `json:"manual_review"`
 	AdminApproval         *bool `json:"admin_approval"`
+
+	// Scoring
+	MinScoreForCertificate *int    `json:"min_score_for_certificate"`
+	ScoringRules           *string `json:"scoring_rules"`
 }
 
 type ListParams struct {
@@ -123,6 +131,10 @@ type OlympiadResponse struct {
 	GiveCertificate       bool `json:"give_certificate"`
 	ManualReview          bool `json:"manual_review"`
 	AdminApproval         bool `json:"admin_approval"`
+
+	// Scoring
+	MinScoreForCertificate int    `json:"min_score_for_certificate"`
+	ScoringRules           string `json:"scoring_rules"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -236,6 +248,9 @@ func ToResponse(o *models.Olympiad) OlympiadResponse {
 		GiveCertificate:       o.GiveCertificate,
 		ManualReview:          o.ManualReview,
 		AdminApproval:         o.AdminApproval,
+
+		MinScoreForCertificate: o.MinScoreForCertificate,
+		ScoringRules:           o.ScoringRules,
 
 		CreatedAt: o.CreatedAt,
 		UpdatedAt: o.UpdatedAt,

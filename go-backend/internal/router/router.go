@@ -1,6 +1,8 @@
 package router
 
 import (
+	"fmt"
+
 	"github.com/gin-gonic/gin"
 	"github.com/nextolympservice/go-backend/config"
 	"github.com/nextolympservice/go-backend/internal/middleware"
@@ -12,6 +14,9 @@ import (
 
 	// Chat
 	"github.com/nextolympservice/go-backend/internal/chat"
+
+	// Upload
+	"github.com/nextolympservice/go-backend/internal/upload"
 
 	// Payme
 	"github.com/nextolympservice/go-backend/internal/payme"
@@ -123,6 +128,10 @@ examsHandler := userexams.NewHandler(db)
 	go chatHub.Run()
 	chatHandler := chat.NewHandler(db, chatHub)
 
+	// ─── Upload ──────────────────────────────────────────────────────
+	baseURL := fmt.Sprintf("http://localhost:%s", cfg.App.Port)
+	uploadHandler := upload.NewHandler(cfg.Upload.Dir, baseURL)
+
 	// ─── Payme ────────────────────────────────────────────────────────────
 	paymeHandler := payme.NewHandler(db, &cfg.Payme)
 
@@ -231,6 +240,9 @@ examsHandler := userexams.NewHandler(db)
 	{
 		protected.POST("/auth/logout", authHandler.Logout)
 		protected.GET("/auth/me", authHandler.Me)
+
+		// Upload
+		protected.POST("/upload", uploadHandler.Upload)
 
 		profileGroup := protected.Group("/profile")
 		{
@@ -401,7 +413,7 @@ examsHandler := userexams.NewHandler(db)
 	// SUPERADMIN ROUTES — /api/v1/superadmin/...
 	// faqat superadmin kiradi (centralized)
 	// ============================================================
-	saroutes.Register(api, panelJWT, db, chatHandler)
+	saroutes.Register(api, panelJWT, db, cfg, chatHandler)
 
 	return r
 }

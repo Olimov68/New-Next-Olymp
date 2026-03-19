@@ -70,6 +70,9 @@ func (s *Service) Create(req *CreateRequest, staffID uint) (*models.Olympiad, er
 		GiveCertificate:       req.GiveCertificate,
 		ManualReview:          req.ManualReview,
 		AdminApproval:         req.AdminApproval,
+
+		MinScoreForCertificate: req.MinScoreForCertificate,
+		ScoringRules:           req.ScoringRules,
 	}
 
 	if req.StartTime != nil {
@@ -200,6 +203,12 @@ func (s *Service) Update(id uint, req *UpdateRequest) (*models.Olympiad, error) 
 	}
 	if req.AdminApproval != nil {
 		fields["admin_approval"] = *req.AdminApproval
+	}
+	if req.MinScoreForCertificate != nil {
+		fields["min_score_for_certificate"] = *req.MinScoreForCertificate
+	}
+	if req.ScoringRules != nil {
+		fields["scoring_rules"] = *req.ScoringRules
 	}
 
 	if err := s.repo.Update(id, fields); err != nil {

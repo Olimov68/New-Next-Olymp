@@ -514,7 +514,9 @@ export default function MockTestDetailPage() {
       setQuestionDialogOpen(false);
       loadQuestions();
     } catch (e: any) {
-      toast.error(e?.response?.data?.error || "Xatolik yuz berdi");
+      const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Xatolik yuz berdi";
+      console.error("Savol yaratish xatosi:", e?.response?.data || e);
+      toast.error(msg);
     } finally {
       setQuestionSaving(false);
     }

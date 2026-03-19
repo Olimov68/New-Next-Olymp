@@ -2,6 +2,7 @@ package saroutes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/nextolympservice/go-backend/config"
 	"github.com/nextolympservice/go-backend/internal/middleware"
 	"github.com/nextolympservice/go-backend/internal/utils"
 	"gorm.io/gorm"
@@ -10,6 +11,7 @@ import (
 
 	adminverifications "github.com/nextolympservice/go-backend/internal/admin/verifications"
 
+	panelupload "github.com/nextolympservice/go-backend/internal/panel/upload"
 	saadmins "github.com/nextolympservice/go-backend/internal/superadmin/admins"
 	saaudit "github.com/nextolympservice/go-backend/internal/superadmin/audit"
 	sacerts "github.com/nextolympservice/go-backend/internal/superadmin/certificates"
@@ -29,7 +31,7 @@ samocktests "github.com/nextolympservice/go-backend/internal/superadmin/mocktest
 )
 
 // Register — superadmin routelarni ro'yxatdan o'tkazadi
-func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB, chatHandler *chat.Handler) {
+func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB, cfg *config.Config, chatHandler *chat.Handler) {
 	// Handlers
 	dashHandler := sadashboard.NewHandler(db)
 	adminsHandler := saadmins.NewHandler(db)
@@ -48,6 +50,7 @@ paymentsHandler := sapayments.NewHandler(db)
 	settingsHandler := sasettings.NewHandler(db)
 	promosHandler := sapromos.NewHandler(db)
 	verificationsHandler := adminverifications.NewHandler(db)
+	uploadHandler := panelupload.NewHandler(cfg)
 
 	// Superadmin group
 	sa := api.Group("/superadmin")
@@ -229,6 +232,9 @@ paymentsHandler := sapayments.NewHandler(db)
 			vG.POST("/user/:user_id/approve", verificationsHandler.ApproveByUserID)
 			vG.POST("/user/:user_id/reject", verificationsHandler.RejectByUserID)
 		}
+
+		// Upload
+		sa.POST("/upload/image", uploadHandler.UploadImage)
 
 		// Chat moderation
 		chatG := sa.Group("/chat")
