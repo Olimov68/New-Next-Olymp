@@ -26,7 +26,7 @@ const navItems = [
   { href: "/superadmin/olympiads", label: "Olimpiadalar", icon: Trophy },
   { href: "/superadmin/mock-tests", label: "Mock testlar", icon: GraduationCap },
   { href: "/superadmin/chat", label: "Chat moderatsiya", icon: MessageCircle },
-  { href: "/superadmin/results", label: "Natijalar", icon: FileText },
+  { href: "/superadmin/results", label: "Reyting", icon: FileText },
   { href: "/superadmin/settings", label: "Sozlamalar", icon: Settings },
 ];
 

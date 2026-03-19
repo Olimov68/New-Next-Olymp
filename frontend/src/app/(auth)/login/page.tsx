@@ -3,20 +3,20 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { motion } from "framer-motion";
-import { googleAuth } from "@/lib/api";
+import { login } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Eye, EyeOff, LogIn } from "lucide-react";
 
 export default function LoginPage() {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [sessionEndedMsg, setSessionEndedMsg] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { setAuth } = useAuth();
-
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
     const reason = sessionStorage.getItem("session_ended_reason");
@@ -26,11 +26,16 @@ export default function LoginPage() {
     }
   }, []);
 
-  const handleGoogleAuth = async (credential: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      setError("Username va parolni kiriting");
+      return;
+    }
     setError("");
     setLoading(true);
     try {
-      const data = await googleAuth(credential);
+      const data = await login(username.trim(), password);
       setAuth(data.tokens, data.user, data.next_step);
       switch (data.next_step) {
         case "complete_profile":
@@ -44,22 +49,10 @@ export default function LoginPage() {
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg || "Google orqali kirishda xatolik yuz berdi");
+      setError(msg || "Kirish muvaffaqiyatsiz bo'ldi. Qaytadan urinib ko'ring.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSuccess = (credentialResponse: CredentialResponse) => {
-    if (credentialResponse.credential) {
-      handleGoogleAuth(credentialResponse.credential);
-    } else {
-      setError("Google dan token olinmadi. Qaytadan urinib ko'ring.");
-    }
-  };
-
-  const handleError = () => {
-    setError("Google bilan kirishda xatolik. Qaytadan urinib ko'ring.");
   };
 
   return (
@@ -93,7 +86,7 @@ export default function LoginPage() {
             </h1>
             <h2 className="text-xl font-semibold text-white mt-4">Tizimga kirish</h2>
             <p className="text-sm text-blue-200/60 mt-2 leading-relaxed">
-              NextOlymp platformasiga xush kelibsiz. Google orqali kirib, testlarni boshlang.
+              Platformaga kirib, testlar va olimpiadalarda qatnashing
             </p>
           </div>
 
@@ -120,31 +113,70 @@ export default function LoginPage() {
             </motion.div>
           )}
 
-          {/* Google Login */}
-          <div className="flex flex-col items-center gap-4">
-            {loading ? (
-              <div className="flex items-center gap-3 py-4 text-blue-200/80">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-sm">Google orqali kiritilmoqda...</span>
-              </div>
-            ) : !clientId ? (
-              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm p-4 text-center w-full">
-                Google Client ID sozlanmagan. Administrator bilan bog&apos;laning.
-              </div>
-            ) : (
-              <div className="w-full flex justify-center">
-                <GoogleLogin
-                  onSuccess={handleSuccess}
-                  onError={handleError}
-                  theme="filled_black"
-                  size="large"
-                  width="360"
-                  text="signin_with"
-                  shape="pill"
+          {/* Login Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username */}
+            <div>
+              <label className="block text-sm font-medium text-blue-200/80 mb-1.5">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Foydalanuvchi nomi"
+                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all"
+                autoComplete="username"
+                disabled={loading}
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block text-sm font-medium text-blue-200/80 mb-1.5">
+                Parol
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 pr-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all"
+                  autoComplete="current-password"
+                  disabled={loading}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+
+            {/* Submit button */}
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Kiritilmoqda...
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-5 w-5" />
+                  Kirish
+                </>
+              )}
+            </motion.button>
+          </form>
 
           {/* Bottom link */}
           <div className="mt-8 text-center text-sm text-blue-200/40">
