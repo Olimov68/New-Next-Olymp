@@ -2,6 +2,7 @@ package usermocktests
 
 import (
 	"errors"
+	"time"
 
 	"github.com/nextolympservice/go-backend/internal/models"
 	"gorm.io/gorm"
@@ -92,6 +93,26 @@ func (s *Service) Join(userID, mockTestID uint) (*RegistrationResponse, error) {
 
 	if mt.Status != models.MockTestStatusPublished && mt.Status != models.MockTestStatusActive {
 		return nil, errors.New("this mock test is not accepting registrations")
+	}
+
+	// Ro'yxatdan o'tish vaqtini tekshirish
+	now := time.Now()
+	if mt.RegistrationStartTime != nil && now.Before(*mt.RegistrationStartTime) {
+		return nil, errors.New("Ro'yxatdan o'tish hali boshlanmagan")
+	}
+	if mt.RegistrationEndTime != nil && now.After(*mt.RegistrationEndTime) {
+		return nil, errors.New("Ro'yxatdan o'tish tugagan")
+	}
+
+	// Joylar sonini tekshirish
+	if mt.MaxSeats > 0 {
+		count, err := s.repo.CountRegistrations(mockTestID)
+		if err != nil {
+			return nil, err
+		}
+		if count >= int64(mt.MaxSeats) {
+			return nil, errors.New("Joylar tugagan")
+		}
 	}
 
 	_, err = s.repo.GetRegistration(userID, mockTestID)

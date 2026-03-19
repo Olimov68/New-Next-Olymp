@@ -64,6 +64,14 @@ func (r *Repository) GetRegistration(userID, mockTestID uint) (*models.MockTestR
 	return &reg, err
 }
 
+func (r *Repository) CountRegistrations(mockTestID uint) (int64, error) {
+	var count int64
+	err := r.db.Model(&models.MockTestRegistration{}).
+		Where("mock_test_id = ? AND status != ?", mockTestID, string(models.MockTestRegStatusCancelled)).
+		Count(&count).Error
+	return count, err
+}
+
 func (r *Repository) CreateRegistration(reg *models.MockTestRegistration) error {
 	return r.db.Create(reg).Error
 }

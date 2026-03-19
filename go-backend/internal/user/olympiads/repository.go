@@ -65,6 +65,14 @@ func (r *Repository) GetRegistration(userID, olympiadID uint) (*models.OlympiadR
 	return &reg, err
 }
 
+func (r *Repository) CountRegistrations(olympiadID uint) (int64, error) {
+	var count int64
+	err := r.db.Model(&models.OlympiadRegistration{}).
+		Where("olympiad_id = ? AND status != ?", olympiadID, string(models.OlympiadRegStatusCancelled)).
+		Count(&count).Error
+	return count, err
+}
+
 func (r *Repository) CreateRegistration(reg *models.OlympiadRegistration) error {
 	return r.db.Create(reg).Error
 }
