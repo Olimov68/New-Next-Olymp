@@ -16,6 +16,7 @@ import {
   createQuestion,
   updateQuestion,
   deleteQuestion,
+  uploadImage,
 } from "@/lib/superadmin-api";
 import { normalizeList } from "@/lib/normalizeList";
 import RegistrationsTable from "@/components/assessment/RegistrationsTable";
@@ -61,6 +62,9 @@ import {
   Settings,
   FileText,
   RefreshCw,
+  Image as ImageIcon,
+  X,
+  Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -76,6 +80,7 @@ interface Option {
   text: string;
   is_correct: boolean;
   order_num: number;
+  image_url?: string;
 }
 
 interface Question {
@@ -91,20 +96,22 @@ interface Question {
 
 interface QuestionForm {
   text: string;
+  image_url: string;
   difficulty: string;
   points: string;
-  options: Option[];
+  options: (Option & { image_url: string })[];
 }
 
-const defaultOptions: Option[] = [
-  { label: "A", text: "", is_correct: false, order_num: 0 },
-  { label: "B", text: "", is_correct: false, order_num: 1 },
-  { label: "C", text: "", is_correct: false, order_num: 2 },
-  { label: "D", text: "", is_correct: false, order_num: 3 },
+const defaultOptions: (Option & { image_url: string })[] = [
+  { label: "A", text: "", is_correct: false, order_num: 0, image_url: "" },
+  { label: "B", text: "", is_correct: false, order_num: 1, image_url: "" },
+  { label: "C", text: "", is_correct: false, order_num: 2, image_url: "" },
+  { label: "D", text: "", is_correct: false, order_num: 3, image_url: "" },
 ];
 
 const emptyQuestionForm: QuestionForm = {
   text: "",
+  image_url: "",
   difficulty: "medium",
   points: "1",
   options: defaultOptions.map((o) => ({ ...o })),
@@ -197,6 +204,8 @@ export default function MockTestDetailPage() {
   const [questionForm, setQuestionForm] = useState<QuestionForm>(emptyQuestionForm);
   const [questionSaving, setQuestionSaving] = useState(false);
   const [questionDeleteId, setQuestionDeleteId] = useState<number | null>(null);
+  const [uploadingQuestionImage, setUploadingQuestionImage] = useState(false);
+  const [uploadingOptionImage, setUploadingOptionImage] = useState<number | null>(null);
 
   /* --- Registrations tab --- */
   const [registrations, setRegistrations] = useState<AssessmentRegistration[]>([]);
@@ -432,15 +441,43 @@ export default function MockTestDetailPage() {
     setEditQuestion(q);
     const opts =
       q.options.length >= 2
-        ? q.options.map((o) => ({ ...o }))
+        ? q.options.map((o) => ({ ...o, image_url: o.image_url || "" }))
         : defaultOptions.map((o) => ({ ...o }));
     setQuestionForm({
       text: q.text,
+      image_url: q.image_url || "",
       difficulty: q.difficulty || "medium",
       points: String(q.points || 1),
       options: opts,
     });
     setQuestionDialogOpen(true);
+  };
+
+  const handleQuestionImageUpload = async (file: File) => {
+    setUploadingQuestionImage(true);
+    try {
+      const res = await uploadImage(file);
+      setQuestionForm((f) => ({ ...f, image_url: res.url }));
+    } catch {
+      toast.error("Rasm yuklanmadi");
+    } finally {
+      setUploadingQuestionImage(false);
+    }
+  };
+
+  const handleOptionImageUpload = async (idx: number, file: File) => {
+    setUploadingOptionImage(idx);
+    try {
+      const res = await uploadImage(file);
+      setQuestionForm((f) => ({
+        ...f,
+        options: f.options.map((o, i) => (i === idx ? { ...o, image_url: res.url } : o)),
+      }));
+    } catch {
+      toast.error("Rasm yuklanmadi");
+    } finally {
+      setUploadingOptionImage(null);
+    }
   };
 
   const setOptionCorrect = (idx: number) => {
@@ -484,6 +521,7 @@ export default function MockTestDetailPage() {
         source_type: "mock_test",
         source_id: mockTestId,
         text: questionForm.text,
+        image_url: questionForm.image_url || undefined,
         difficulty: questionForm.difficulty,
         points,
         order_num: editQuestion ? editQuestion.order_num : questions.length,
@@ -492,6 +530,7 @@ export default function MockTestDetailPage() {
           text: o.text,
           is_correct: o.is_correct,
           order_num: i,
+          image_url: o.image_url || undefined,
         })),
       };
 
@@ -504,6 +543,7 @@ export default function MockTestDetailPage() {
             text: o.text,
             is_correct: o.is_correct,
             order_num: i,
+            image_url: o.image_url || undefined,
           })),
         } as Record<string, unknown>);
         toast.success("Savol yangilandi");
@@ -874,6 +914,9 @@ export default function MockTestDetailPage() {
                       </span>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-foreground mb-3">{q.text}</p>
+                        {q.image_url && (
+                          <img src={q.image_url} alt="Savol rasmi" className="h-20 w-auto rounded-lg border border-border object-contain bg-muted mb-3" />
+                        )}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {q.options.map((opt) => (
                             <div
@@ -898,13 +941,18 @@ export default function MockTestDetailPage() {
                               >
                                 {opt.label}.
                               </span>
-                              <span
-                                className={
-                                  opt.is_correct ? "text-foreground font-medium" : "text-muted-foreground"
-                                }
-                              >
-                                {opt.text}
-                              </span>
+                              <div className="flex-1">
+                                <span
+                                  className={
+                                    opt.is_correct ? "text-foreground font-medium" : "text-muted-foreground"
+                                  }
+                                >
+                                  {opt.text}
+                                </span>
+                                {opt.image_url && (
+                                  <img src={opt.image_url} alt={`${opt.label} rasmi`} className="h-10 w-auto rounded border border-border object-contain bg-muted mt-1" />
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -958,6 +1006,26 @@ export default function MockTestDetailPage() {
                     onChange={(e) => setQuestionForm((f) => ({ ...f, text: e.target.value }))}
                   />
                 </div>
+                {/* Question image upload */}
+                <div className="space-y-1.5">
+                  <Label>Savol rasmi</Label>
+                  {questionForm.image_url ? (
+                    <div className="flex items-start gap-2">
+                      <img src={questionForm.image_url} alt="Savol rasmi" className="h-20 w-auto rounded-lg border border-border object-contain bg-muted" />
+                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setQuestionForm((f) => ({ ...f, image_url: "" }))}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-border bg-muted/50 hover:bg-muted cursor-pointer transition-colors text-sm text-muted-foreground">
+                        {uploadingQuestionImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        Rasm yuklash
+                        <input type="file" accept="image/*" className="hidden" disabled={uploadingQuestionImage} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleQuestionImageUpload(f); e.target.value = ""; }} />
+                      </label>
+                    </div>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -993,26 +1061,40 @@ export default function MockTestDetailPage() {
                   {questionForm.options.map((opt, idx) => (
                     <div
                       key={opt.label}
-                      className={`flex items-center gap-3 rounded-xl border p-3 transition-colors ${
+                      className={`rounded-xl border p-3 transition-colors ${
                         opt.is_correct ? "border-green-500/30 bg-green-500/5" : "border-border"
                       }`}
                     >
-                      <button type="button" onClick={() => setOptionCorrect(idx)} className="flex-shrink-0">
-                        {opt.is_correct ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-600" />
-                        ) : (
-                          <Circle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
-                        )}
-                      </button>
-                      <span className="font-bold text-sm w-5 text-muted-foreground flex-shrink-0">
-                        {opt.label}.
-                      </span>
-                      <Input
-                        placeholder={`${opt.label} varianti...`}
-                        value={opt.text}
-                        onChange={(e) => setOptionText(idx, e.target.value)}
-                        className="flex-1"
-                      />
+                      <div className="flex items-center gap-3">
+                        <button type="button" onClick={() => setOptionCorrect(idx)} className="flex-shrink-0">
+                          {opt.is_correct ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                          ) : (
+                            <Circle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+                          )}
+                        </button>
+                        <span className="font-bold text-sm w-5 text-muted-foreground flex-shrink-0">
+                          {opt.label}.
+                        </span>
+                        <Input
+                          placeholder={`${opt.label} varianti...`}
+                          value={opt.text}
+                          onChange={(e) => setOptionText(idx, e.target.value)}
+                          className="flex-1"
+                        />
+                        <label className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-border bg-muted/50 hover:bg-muted cursor-pointer transition-colors flex-shrink-0" title="Rasm yuklash">
+                          {uploadingOptionImage === idx ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" /> : <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />}
+                          <input type="file" accept="image/*" className="hidden" disabled={uploadingOptionImage === idx} onChange={(e) => { const f = e.target.files?.[0]; if (f) handleOptionImageUpload(idx, f); e.target.value = ""; }} />
+                        </label>
+                      </div>
+                      {opt.image_url && (
+                        <div className="flex items-start gap-2 mt-2 ml-11">
+                          <img src={opt.image_url} alt={`${opt.label} rasmi`} className="h-14 w-auto rounded border border-border object-contain bg-muted" />
+                          <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => setQuestionForm((f) => ({ ...f, options: f.options.map((o, i) => i === idx ? { ...o, image_url: "" } : o) }))}>
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                   <p className="text-xs text-muted-foreground">
