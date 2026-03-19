@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { mediaUrl } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -326,7 +327,7 @@ export default function DashboardPage() {
                   <div className="rounded-lg border border-border bg-card p-4 hover:shadow-md transition-shadow cursor-pointer">
                     {n.cover_image && (
                       <img
-                        src={n.cover_image}
+                        src={mediaUrl(n.cover_image)}
                         alt={n.title}
                         className="w-full h-32 object-cover rounded-lg mb-3"
                       />

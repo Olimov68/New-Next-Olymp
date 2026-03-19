@@ -1,10 +1,18 @@
 import axios from "axios";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1";
+const BACKEND_URL = API_BASE.replace("/api/v1", "");
 
 export const api = axios.create({
   baseURL: API_BASE,
 });
+
+/** Backend'dan kelgan /uploads/... URL'larni to'liq URL'ga aylantiradi */
+export function mediaUrl(path: string | undefined | null): string {
+  if (!path) return "";
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${BACKEND_URL}${path}`;
+}
 
 // ============================================================
 // REQUEST INTERCEPTOR — token qo'shish
