@@ -23,8 +23,7 @@ const statusOptions = [
   { value: "published", label: "E\u2019lon qilingan" },
   { value: "active", label: "Faol" },
   { value: "upcoming", label: "Kutilmoqda" },
-  { value: "completed", label: "Yakunlangan" },
-  { value: "ended", label: "Tugagan" },
+  { value: "ended", label: "Yakunlangan" },
 ];
 
 const paidOptions = [

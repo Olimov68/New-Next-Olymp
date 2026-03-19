@@ -451,7 +451,11 @@ export async function listNews(params?: { page?: number; page_size?: number; typ
   if (params?.page_size) query.set('page_size', String(params.page_size));
   if (params?.type) query.set('type', params.type);
   const res = await api.get(`/user/news?${query}`);
-  return res.data.data;
+  const d = res.data.data;
+  // Pagination response: {data: [...], total, page} yoki to'g'ridan-to'g'ri array
+  if (d && Array.isArray(d.data)) return d.data;
+  if (Array.isArray(d)) return d;
+  return [];
 }
 
 export async function getNewsDetail(id: number | string) {
