@@ -2,6 +2,7 @@ package userolympiads
 
 import (
 	"errors"
+	"time"
 
 	"github.com/nextolympservice/go-backend/internal/models"
 	"gorm.io/gorm"
@@ -92,6 +93,26 @@ func (s *Service) Join(userID, olympiadID uint) (*RegistrationResponse, error) {
 
 	if olympiad.Status != models.OlympiadStatusPublished && olympiad.Status != models.OlympiadStatusActive {
 		return nil, errors.New("this olympiad is not accepting registrations")
+	}
+
+	// Ro'yxatdan o'tish vaqtini tekshirish
+	now := time.Now()
+	if olympiad.RegistrationStartTime != nil && now.Before(*olympiad.RegistrationStartTime) {
+		return nil, errors.New("Ro'yxatdan o'tish hali boshlanmagan")
+	}
+	if olympiad.RegistrationEndTime != nil && now.After(*olympiad.RegistrationEndTime) {
+		return nil, errors.New("Ro'yxatdan o'tish tugagan")
+	}
+
+	// Joylar sonini tekshirish
+	if olympiad.MaxSeats > 0 {
+		count, err := s.repo.CountRegistrations(olympiadID)
+		if err != nil {
+			return nil, err
+		}
+		if count >= int64(olympiad.MaxSeats) {
+			return nil, errors.New("Joylar tugagan")
+		}
 	}
 
 	// Oldin qo'shilgan-qo'shilmaganligini tekshirish

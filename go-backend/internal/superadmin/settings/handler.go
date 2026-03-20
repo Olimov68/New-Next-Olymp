@@ -18,11 +18,12 @@ func NewHandler(db *gorm.DB) *Handler {
 }
 
 type UpdateGlobalSettingsRequest struct {
-	PlatformName        *string `json:"platform_name"`
-	DefaultLanguage     *string `json:"default_language"`
-	SupportEmail        *string `json:"support_email"`
-	MaintenanceMode     *bool   `json:"maintenance_mode"`
-	RegistrationEnabled *bool   `json:"registration_enabled"`
+	PlatformName                *string `json:"platform_name"`
+	DefaultLanguage             *string `json:"default_language"`
+	SupportEmail                *string `json:"support_email"`
+	MaintenanceMode             *bool   `json:"maintenance_mode"`
+	RegistrationEnabled         *bool   `json:"registration_enabled"`
+	TelegramVerificationEnabled *bool   `json:"telegram_verification_enabled"`
 }
 
 // GetAll GET /api/v1/superadmin/settings
@@ -78,6 +79,9 @@ func (h *Handler) Update(c *gin.Context) {
 	}
 	if req.RegistrationEnabled != nil {
 		fields["registration_enabled"] = *req.RegistrationEnabled
+	}
+	if req.TelegramVerificationEnabled != nil {
+		fields["telegram_verification_enabled"] = *req.TelegramVerificationEnabled
 	}
 
 	if len(fields) > 0 {

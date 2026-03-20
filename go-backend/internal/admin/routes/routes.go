@@ -9,23 +9,25 @@ import (
 
 	admincertificates "github.com/nextolympservice/go-backend/internal/admin/certificates"
 	admindashboard "github.com/nextolympservice/go-backend/internal/admin/dashboard"
-	adminfeedback "github.com/nextolympservice/go-backend/internal/admin/feedback"
+	adminverifications "github.com/nextolympservice/go-backend/internal/admin/verifications"
 	adminnews "github.com/nextolympservice/go-backend/internal/admin/news"
+	adminresults "github.com/nextolympservice/go-backend/internal/admin/results"
 	admintests "github.com/nextolympservice/go-backend/internal/admin/tests"
 	adminusers "github.com/nextolympservice/go-backend/internal/admin/users"
+	"github.com/nextolympservice/go-backend/internal/chat"
 	panelupload "github.com/nextolympservice/go-backend/internal/panel/upload"
 )
 
 // Register — admin routelarni ro'yxatdan o'tkazadi
-func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB, cfg *config.Config) {
+func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB, cfg *config.Config, chatHandler *chat.Handler) {
 	// Handlers
 	dashHandler := admindashboard.NewHandler(db)
 	testsHandler := admintests.NewHandler(admintests.NewService(admintests.NewRepository(db)))
 	usersHandler := adminusers.NewHandler(db)
 	newsHandler := adminnews.NewHandler(db)
 	certsHandler := admincertificates.NewHandler(db)
-	feedbackHandler := adminfeedback.NewHandler(db)
-	resultsHandler := adminfeedback.NewResultsHandler(db)
+	resultsHandler := adminresults.NewResultsHandler(db)
+	verificationsHandler := adminverifications.NewHandler(db)
 	uploadHandler := panelupload.NewHandler(cfg)
 
 	// Admin group
@@ -33,7 +35,7 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 	admin.Use(middleware.PanelAuthRequired(panelJWT, db))
 	admin.Use(middleware.AdminOnly())
 	{
-		// Dashboard - no specific permission, filtered internally
+		// Dashboard
 		admin.GET("/dashboard", dashHandler.Stats)
 
 		// Olympiads
@@ -70,6 +72,7 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 			ug.GET("/:id", middleware.PermissionRequired(db, "users.view"), usersHandler.GetByID)
 			ug.PATCH("/:id/block", middleware.PermissionRequired(db, "users.block"), usersHandler.Block)
 			ug.PATCH("/:id/unblock", middleware.PermissionRequired(db, "users.block"), usersHandler.Unblock)
+			ug.DELETE("/:id", middleware.PermissionRequired(db, "users.delete"), usersHandler.Delete)
 		}
 
 		// News
@@ -89,12 +92,31 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 			cerG.GET("/:id", middleware.PermissionRequired(db, "certificates.view"), certsHandler.GetByID)
 		}
 
-		// Feedback
-		fbG := admin.Group("/feedback")
+		// Verifications
+		vG := admin.Group("/verifications")
 		{
-			fbG.GET("", middleware.PermissionRequired(db, "news.view"), feedbackHandler.List)
-			fbG.GET("/:id", middleware.PermissionRequired(db, "news.view"), feedbackHandler.GetByID)
-			fbG.PUT("/:id/reply", middleware.PermissionRequired(db, "news.update"), feedbackHandler.Reply)
+			vG.GET("", verificationsHandler.List)
+			vG.GET("/:id", verificationsHandler.GetByID)
+			vG.POST("/:id/approve", verificationsHandler.Approve)
+			vG.POST("/:id/reject", verificationsHandler.Reject)
+			vG.POST("/user/:user_id/approve", verificationsHandler.ApproveByUserID)
+			vG.POST("/user/:user_id/reject", verificationsHandler.RejectByUserID)
+		}
+
+		// Chat Moderation
+		chatG := admin.Group("/chat")
+		{
+			chatG.GET("/messages", chatHandler.GetMessages)
+			chatG.POST("/messages", chatHandler.AdminSendMessage)
+			chatG.DELETE("/messages/:id", chatHandler.AdminDeleteMessage)
+			chatG.POST("/ban/:user_id", chatHandler.AdminBanUser)
+			chatG.POST("/unban/:user_id", chatHandler.AdminUnbanUser)
+			chatG.POST("/toggle", chatHandler.AdminToggleChat)
+			chatG.GET("/bans", chatHandler.AdminGetBannedUsers)
+			chatG.GET("/online", chatHandler.GetOnlineCount)
+			chatG.GET("/settings", chatHandler.AdminGetSettings)
+			chatG.PUT("/settings", chatHandler.AdminUpdateSettings)
+			chatG.GET("/moderation-logs", chatHandler.AdminGetModerationLogs)
 		}
 
 		// Upload

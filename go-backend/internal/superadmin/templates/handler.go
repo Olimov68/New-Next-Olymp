@@ -20,23 +20,32 @@ func NewHandler(db *gorm.DB) *Handler {
 
 type CreateTemplateRequest struct {
 	Name            string `json:"name" binding:"required,min=2,max=200"`
-	Type            string `json:"type" binding:"required,oneof=olympiad_winner olympiad_participant mock_test"`
+	Type            string `json:"type" binding:"required"`
+	Description     string `json:"description"`
 	BackgroundImage string `json:"background_image"`
 	LogoImage       string `json:"logo_image"`
-	BodyTemplate    string `json:"body_template" binding:"required,min=10"`
+	BodyTemplate    string `json:"body_template"`
+	LayoutJSON      string `json:"layout_json"`
+	PageSize        string `json:"page_size"`
+	Orientation     string `json:"orientation"`
 	FontFamily      string `json:"font_family"`
-	FontSize        int    `json:"font_size" binding:"omitempty,min=8,max=72"`
+	FontSize        int    `json:"font_size"`
 	FontColor       string `json:"font_color"`
+	IsActive        *bool  `json:"is_active"`
 }
 
 type UpdateTemplateRequest struct {
-	Name            string `json:"name" binding:"omitempty,min=2,max=200"`
-	Type            string `json:"type" binding:"omitempty,oneof=olympiad_winner olympiad_participant mock_test"`
+	Name            string `json:"name"`
+	Type            string `json:"type"`
+	Description     string `json:"description"`
 	BackgroundImage string `json:"background_image"`
 	LogoImage       string `json:"logo_image"`
-	BodyTemplate    string `json:"body_template" binding:"omitempty,min=10"`
+	BodyTemplate    string `json:"body_template"`
+	LayoutJSON      string `json:"layout_json"`
+	PageSize        string `json:"page_size"`
+	Orientation     string `json:"orientation"`
 	FontFamily      string `json:"font_family"`
-	FontSize        int    `json:"font_size" binding:"omitempty,min=8,max=72"`
+	FontSize        int    `json:"font_size"`
 	FontColor       string `json:"font_color"`
 	IsActive        *bool  `json:"is_active"`
 }
@@ -80,20 +89,32 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	staffID := c.GetUint("staff_id")
+	staffID, _ := c.Get("staffID")
+	sid, _ := staffID.(uint)
+
+	isActive := true
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+
 	tmpl := models.CertificateTemplate{
 		Name:            req.Name,
 		Type:            req.Type,
+		Description:     req.Description,
 		BackgroundImage: req.BackgroundImage,
 		LogoImage:       req.LogoImage,
 		BodyTemplate:    req.BodyTemplate,
+		LayoutJSON:      req.LayoutJSON,
+		PageSize:        req.PageSize,
+		Orientation:     req.Orientation,
 		FontFamily:      req.FontFamily,
 		FontSize:        req.FontSize,
 		FontColor:       req.FontColor,
-		IsActive:        true,
-		CreatedByID:     &staffID,
+		IsActive:        isActive,
+		CreatedByID:     &sid,
 	}
 
+	// Defaults
 	if tmpl.FontFamily == "" {
 		tmpl.FontFamily = "Arial"
 	}
@@ -102,6 +123,12 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 	if tmpl.FontColor == "" {
 		tmpl.FontColor = "#000000"
+	}
+	if tmpl.PageSize == "" {
+		tmpl.PageSize = "A4"
+	}
+	if tmpl.Orientation == "" {
+		tmpl.Orientation = "landscape"
 	}
 
 	if err := h.db.Create(&tmpl).Error; err != nil {
@@ -132,39 +159,53 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
+	updates := map[string]interface{}{}
 	if req.Name != "" {
-		tmpl.Name = req.Name
+		updates["name"] = req.Name
 	}
 	if req.Type != "" {
-		tmpl.Type = req.Type
+		updates["type"] = req.Type
+	}
+	if req.Description != "" {
+		updates["description"] = req.Description
 	}
 	if req.BackgroundImage != "" {
-		tmpl.BackgroundImage = req.BackgroundImage
+		updates["background_image"] = req.BackgroundImage
 	}
 	if req.LogoImage != "" {
-		tmpl.LogoImage = req.LogoImage
+		updates["logo_image"] = req.LogoImage
 	}
 	if req.BodyTemplate != "" {
-		tmpl.BodyTemplate = req.BodyTemplate
+		updates["body_template"] = req.BodyTemplate
+	}
+	if req.LayoutJSON != "" {
+		updates["layout_json"] = req.LayoutJSON
+	}
+	if req.PageSize != "" {
+		updates["page_size"] = req.PageSize
+	}
+	if req.Orientation != "" {
+		updates["orientation"] = req.Orientation
 	}
 	if req.FontFamily != "" {
-		tmpl.FontFamily = req.FontFamily
+		updates["font_family"] = req.FontFamily
 	}
 	if req.FontSize > 0 {
-		tmpl.FontSize = req.FontSize
+		updates["font_size"] = req.FontSize
 	}
 	if req.FontColor != "" {
-		tmpl.FontColor = req.FontColor
+		updates["font_color"] = req.FontColor
 	}
 	if req.IsActive != nil {
-		tmpl.IsActive = *req.IsActive
+		updates["is_active"] = *req.IsActive
 	}
 
-	if err := h.db.Save(&tmpl).Error; err != nil {
+	if err := h.db.Model(&tmpl).Updates(updates).Error; err != nil {
 		response.Error(c, http.StatusInternalServerError, "Shablonni yangilashda xatolik")
 		return
 	}
 
+	h.db.First(&tmpl, id)
 	response.Success(c, http.StatusOK, "Shablon yangilandi", tmpl)
 }
 

@@ -8,8 +8,9 @@ type GlobalSetting struct {
 	PlatformName        string    `gorm:"size:200;default:NextOlymp" json:"platform_name"`
 	DefaultLanguage     string    `gorm:"size:10;default:uz" json:"default_language"`
 	SupportEmail        string    `gorm:"size:200" json:"support_email"`
-	MaintenanceMode     bool      `gorm:"default:false;not null" json:"maintenance_mode"`
-	RegistrationEnabled bool      `gorm:"default:true;not null" json:"registration_enabled"`
+	MaintenanceMode              bool      `gorm:"default:false;not null" json:"maintenance_mode"`
+	RegistrationEnabled          bool      `gorm:"default:true;not null" json:"registration_enabled"`
+	TelegramVerificationEnabled  bool      `gorm:"default:false;not null" json:"telegram_verification_enabled"`
 	UpdatedAt           time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }
 

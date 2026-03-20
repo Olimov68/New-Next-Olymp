@@ -20,6 +20,29 @@ type CreateRequest struct {
 	Status        string   `json:"status"`
 	IsPaid        bool     `json:"is_paid"`
 	Price         *float64 `json:"price"`
+
+	// Media
+	BannerURL string `json:"banner_url"`
+	IconURL   string `json:"icon_url"`
+
+	// Registration
+	RegistrationStartTime *string `json:"registration_start_time"`
+	RegistrationEndTime   *string `json:"registration_end_time"`
+	MaxSeats              int     `json:"max_seats"`
+
+	// Settings
+	ShuffleQuestions      bool `json:"shuffle_questions"`
+	ShuffleAnswers        bool `json:"shuffle_answers"`
+	AutoSubmit            bool `json:"auto_submit"`
+	AllowRetake           bool `json:"allow_retake"`
+	ShowResultImmediately bool `json:"show_result_immediately"`
+	GiveCertificate       bool `json:"give_certificate"`
+	ManualReview          bool `json:"manual_review"`
+	AdminApproval         bool `json:"admin_approval"`
+
+	// Scoring
+	MinScoreForCertificate int    `json:"min_score_for_certificate"`
+	ScoringRules           string `json:"scoring_rules"`
 }
 
 type UpdateRequest struct {
@@ -36,12 +59,38 @@ type UpdateRequest struct {
 	Status         *string  `json:"status"`
 	IsPaid         *bool    `json:"is_paid"`
 	Price          *float64 `json:"price"`
+
+	// Media
+	BannerURL *string `json:"banner_url"`
+	IconURL   *string `json:"icon_url"`
+
+	// Registration
+	RegistrationStartTime *string `json:"registration_start_time"`
+	RegistrationEndTime   *string `json:"registration_end_time"`
+	MaxSeats              *int    `json:"max_seats"`
+
+	// Settings
+	ShuffleQuestions      *bool `json:"shuffle_questions"`
+	ShuffleAnswers        *bool `json:"shuffle_answers"`
+	AutoSubmit            *bool `json:"auto_submit"`
+	AllowRetake           *bool `json:"allow_retake"`
+	ShowResultImmediately *bool `json:"show_result_immediately"`
+	GiveCertificate       *bool `json:"give_certificate"`
+	ManualReview          *bool `json:"manual_review"`
+	AdminApproval         *bool `json:"admin_approval"`
+
+	// Scoring
+	MinScoreForCertificate *int    `json:"min_score_for_certificate"`
+	ScoringRules           *string `json:"scoring_rules"`
 }
 
 type ListParams struct {
 	Status   string `form:"status"`
 	Subject  string `form:"subject"`
 	Search   string `form:"search"`
+	Grade    *int   `form:"grade"`
+	Language string `form:"language"`
+	IsPaid   *bool  `form:"is_paid"`
 	Page     int    `form:"page,default=1"`
 	PageSize int    `form:"page_size,default=20"`
 }
@@ -63,8 +112,106 @@ type OlympiadResponse struct {
 	IsPaid         bool       `json:"is_paid"`
 	Price          *float64   `json:"price,omitempty"`
 	CreatedByID    *uint      `json:"created_by_id,omitempty"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
+
+	// Media
+	BannerURL string `json:"banner_url"`
+	IconURL   string `json:"icon_url"`
+
+	// Registration
+	RegistrationStartTime *time.Time `json:"registration_start_time,omitempty"`
+	RegistrationEndTime   *time.Time `json:"registration_end_time,omitempty"`
+	MaxSeats              int        `json:"max_seats"`
+
+	// Settings
+	ShuffleQuestions      bool `json:"shuffle_questions"`
+	ShuffleAnswers        bool `json:"shuffle_answers"`
+	AutoSubmit            bool `json:"auto_submit"`
+	AllowRetake           bool `json:"allow_retake"`
+	ShowResultImmediately bool `json:"show_result_immediately"`
+	GiveCertificate       bool `json:"give_certificate"`
+	ManualReview          bool `json:"manual_review"`
+	AdminApproval         bool `json:"admin_approval"`
+
+	// Scoring
+	MinScoreForCertificate int    `json:"min_score_for_certificate"`
+	ScoringRules           string `json:"scoring_rules"`
+
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// PaginationParams — common pagination query params
+type PaginationParams struct {
+	Page     int `form:"page,default=1"`
+	PageSize int `form:"page_size,default=20"`
+}
+
+// RegistrationResponse — single registration item for list endpoints
+type RegistrationResponse struct {
+	ID        uint   `json:"id"`
+	UserID    uint   `json:"user_id"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Status    string `json:"status"`
+	JoinedAt  string `json:"joined_at"`
+}
+
+// ResultResponse — single result item for results endpoint
+type ResultResponse struct {
+	ID         uint    `json:"id"`
+	UserID     uint    `json:"user_id"`
+	Username   string  `json:"username"`
+	FirstName  string  `json:"first_name"`
+	LastName   string  `json:"last_name"`
+	Score      float64 `json:"score"`
+	MaxScore   float64 `json:"max_score"`
+	Percentage float64 `json:"percentage"`
+	Correct    int     `json:"correct"`
+	Wrong      int     `json:"wrong"`
+	Rank       int     `json:"rank"`
+	TimeTaken  int     `json:"time_taken"`
+	Status     string  `json:"status"`
+}
+
+func ToRegistrationResponse(r *models.OlympiadRegistration) RegistrationResponse {
+	resp := RegistrationResponse{
+		ID:       r.ID,
+		UserID:   r.UserID,
+		Status:   string(r.Status),
+		JoinedAt: r.JoinedAt.Format(time.RFC3339),
+	}
+	if r.User != nil {
+		resp.Username = r.User.Username
+		if r.User.Profile != nil {
+			resp.FirstName = r.User.Profile.FirstName
+			resp.LastName = r.User.Profile.LastName
+		}
+	}
+	return resp
+}
+
+func ToResultResponse(a *models.OlympiadAttempt) ResultResponse {
+	resp := ResultResponse{
+		ID:         a.ID,
+		UserID:     a.UserID,
+		Score:      a.Score,
+		MaxScore:   a.MaxScore,
+		Percentage: a.Percentage,
+		Correct:    a.Correct,
+		Wrong:      a.Wrong,
+		Rank:       a.Rank,
+		TimeTaken:  a.TimeTaken,
+		Status:     a.Status,
+	}
+	if a.User != nil {
+		resp.Username = a.User.Username
+		if a.User.Profile != nil {
+			resp.FirstName = a.User.Profile.FirstName
+			resp.LastName = a.User.Profile.LastName
+		}
+	}
+	return resp
 }
 
 func ToResponse(o *models.Olympiad) OlympiadResponse {
@@ -85,7 +232,27 @@ func ToResponse(o *models.Olympiad) OlympiadResponse {
 		IsPaid:         o.IsPaid,
 		Price:          o.Price,
 		CreatedByID:    o.CreatedByID,
-		CreatedAt:      o.CreatedAt,
-		UpdatedAt:      o.UpdatedAt,
+
+		BannerURL: o.BannerURL,
+		IconURL:   o.IconURL,
+
+		RegistrationStartTime: o.RegistrationStartTime,
+		RegistrationEndTime:   o.RegistrationEndTime,
+		MaxSeats:              o.MaxSeats,
+
+		ShuffleQuestions:      o.ShuffleQuestions,
+		ShuffleAnswers:        o.ShuffleAnswers,
+		AutoSubmit:            o.AutoSubmit,
+		AllowRetake:           o.AllowRetake,
+		ShowResultImmediately: o.ShowResultImmediately,
+		GiveCertificate:       o.GiveCertificate,
+		ManualReview:          o.ManualReview,
+		AdminApproval:         o.AdminApproval,
+
+		MinScoreForCertificate: o.MinScoreForCertificate,
+		ScoringRules:           o.ScoringRules,
+
+		CreatedAt: o.CreatedAt,
+		UpdatedAt: o.UpdatedAt,
 	}
 }

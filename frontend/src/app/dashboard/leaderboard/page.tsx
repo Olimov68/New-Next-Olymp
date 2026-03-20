@@ -16,13 +16,12 @@ import {
   Medal,
   Award,
   Crown,
-  ChevronLeft,
-  ChevronRight,
   User,
   MapPin,
   Target,
   Flame,
 } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import {
   getLeaderboard,
   getMyRank,
@@ -124,18 +123,18 @@ function MyRankCard({ myRank }: { myRank: MyRankInfo | null }) {
         <div className="grid grid-cols-3 gap-4 mt-6">
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
             <Flame className="h-5 w-5 text-amber-300 mx-auto mb-1" />
-            <p className="text-white font-bold text-lg">{myRank.total_score}</p>
+            <p className="text-white font-bold text-lg">{myRank.score}</p>
             <p className="text-blue-200 text-xs">Umumiy ball</p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
             <Target className="h-5 w-5 text-green-300 mx-auto mb-1" />
-            <p className="text-white font-bold text-lg">{myRank.avg_percentage.toFixed(1)}%</p>
+            <p className="text-white font-bold text-lg">{(myRank.percentage ?? 0).toFixed(1)}%</p>
             <p className="text-blue-200 text-xs">Aniqlik</p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center">
             <Trophy className="h-5 w-5 text-purple-300 mx-auto mb-1" />
-            <p className="text-white font-bold text-lg">{myRank.attempts_count}</p>
-            <p className="text-blue-200 text-xs">Urinishlar</p>
+            <p className="text-white font-bold text-lg">{myRank.correct}/{myRank.total}</p>
+            <p className="text-blue-200 text-xs">To'g'ri/Jami</p>
           </div>
         </div>
       </div>
@@ -214,7 +213,7 @@ function TopPodium({ entries }: { entries: LeaderboardEntry[] }) {
 
               {/* Score */}
               <p className={`text-sm font-bold ${cfg.scoreColor}`}>
-                {cfg.entry.total_score} ball
+                {cfg.entry.score} ball
               </p>
 
               {/* Podium block */}
@@ -277,7 +276,7 @@ function LeaderboardTable({
                 Aniqlik
               </th>
               <th className="text-right text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 hidden sm:table-cell">
-                Urinishlar
+                To'g'ri/Jami
               </th>
               <th className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-3 w-16">
                 Medal
@@ -343,17 +342,17 @@ function LeaderboardTable({
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className="text-sm font-semibold text-foreground">
-                      {entry.total_score}
+                      {entry.score}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right hidden sm:table-cell">
                     <span className="text-sm text-muted-foreground">
-                      {entry.avg_percentage.toFixed(1)}%
+                      {(entry.percentage ?? 0).toFixed(1)}%
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right hidden sm:table-cell">
                     <span className="text-sm text-muted-foreground">
-                      {entry.attempts_count}
+                      {entry.correct}/{entry.total}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -558,61 +557,7 @@ export default function LeaderboardPage() {
           {/* Leaderboard Table */}
           <LeaderboardTable entries={entries} page={page} myRank={myRank} />
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Jami: {total} ta ishtirokchi
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="flex items-center gap-1"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Oldingi
-                </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                    let pageNum: number;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (page <= 3) {
-                      pageNum = i + 1;
-                    } else if (page >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = page - 2 + i;
-                    }
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={page === pageNum ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setPage(pageNum)}
-                        className="w-9 h-9 p-0"
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="flex items-center gap-1"
-                >
-                  Keyingi
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} total={total} />
         </>
       )}
     </div>

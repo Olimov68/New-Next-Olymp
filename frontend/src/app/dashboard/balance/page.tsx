@@ -17,13 +17,12 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownLeft,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   AlertCircle,
   CheckCircle2,
   Tag,
 } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import {
   getBalance,
   getTransactions,
@@ -32,6 +31,7 @@ import {
   type BalanceInfo,
   type Transaction,
   type PromoApplyResponse,
+  type TopUpResponse,
 } from "@/lib/user-api";
 
 export default function BalancePage() {
@@ -67,23 +67,58 @@ export default function BalancePage() {
   };
 
   useEffect(() => {
+    // Check if user returned from Payme
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "success") {
+      setTopUpMessage("To'lov muvaffaqiyatli amalga oshirildi! Balans yangilanmoqda...");
+      // Clean up URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
     loadData(page);
   }, [page]);
 
   const handleTopUp = async () => {
     const amount = parseInt(topUpAmount, 10);
-    if (!amount || amount <= 0) {
-      setTopUpError("Summani kiriting");
+    if (!amount || amount < 1000) {
+      setTopUpError("Minimum summa 1,000 so'm");
       return;
     }
     setTopUpLoading(true);
     setTopUpError("");
     setTopUpMessage("");
     try {
-      await topUp(amount);
+      const result: TopUpResponse = await topUp(amount);
+
+      if (result.payme && result.payme.merchant_id) {
+        // Redirect to Payme checkout via form POST
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = result.payme.checkout_url;
+
+        const fields: Record<string, string> = {
+          merchant: result.payme.merchant_id,
+          amount: String(result.payme.amount),
+          "account[order_id]": String(result.payme.order_id),
+          lang: "uz",
+          callback: window.location.origin + "/dashboard/balance?payment=success",
+        };
+
+        for (const [key, value] of Object.entries(fields)) {
+          const input = document.createElement("input");
+          input.type = "hidden";
+          input.name = key;
+          input.value = value;
+          form.appendChild(input);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      }
+
+      // Fallback if Payme not configured
       setTopUpMessage("So'rov muvaffaqiyatli yuborildi!");
       setTopUpAmount("");
-      // Refresh data
       await loadData(page);
     } catch (err: any) {
       setTopUpError(err?.response?.data?.message || "Xatolik yuz berdi");
@@ -323,34 +358,7 @@ export default function BalancePage() {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    Jami: {totalTxns} ta tranzaksiya
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page <= 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm text-muted-foreground">
-                      {page} / {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page >= totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              )}
+              <Pagination page={page} totalPages={totalPages} onPageChange={setPage} total={totalTxns} className="mt-4 pt-4 border-t" />
             </>
           )}
         </CardContent>

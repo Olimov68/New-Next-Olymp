@@ -51,23 +51,19 @@ export interface Certificate {
   source_type: string;
   source_id: number;
   source_title: string;
+  certificate_type: string;
   score: number;
+  max_score: number;
   percentage: number;
+  scaled_score: number;
+  grade: string;
+  rank: number;
   verification_code: string;
   certificate_number: string;
   issued_at: string;
-  created_at: string;
-}
-
-export interface Feedback {
-  id: number;
-  user_id: number;
-  category: string;
-  subject: string;
-  message: string;
+  valid_until: string;
   status: string;
-  admin_reply: string;
-  replied_at: string;
+  pdf_url: string;
   created_at: string;
 }
 
@@ -277,8 +273,22 @@ export const getTransactions = (params?: {
 }): Promise<TransactionsResponse> =>
   api.get("/user/balance/transactions", { params }).then((r) => r.data);
 
-export const topUp = (amount: number) =>
-  api.post("/user/balance/topup", { amount }).then((r) => r.data);
+export interface TopUpResponse {
+  payment_id: number;
+  amount: number;
+  transaction_id: string;
+  status: string;
+  checkout_url: string;
+  payme: {
+    merchant_id: string;
+    amount: number;
+    order_id: number;
+    checkout_url: string;
+  };
+}
+
+export const topUp = (amount: number): Promise<TopUpResponse> =>
+  api.post("/user/balance/topup", { amount }).then((r) => r.data.data ?? r.data);
 
 // ─── Promo Code ─────────────────────────────────────────────────────────────
 
@@ -296,7 +306,7 @@ export interface PromoApplyResponse {
 
 export const applyPromoCode = (data: {
   code: string;
-  amount: number;
+  amount?: number;
   source_type?: string;
 }): Promise<PromoApplyResponse> =>
   api.post("/user/balance/promo-code/apply", data).then((r) => r.data.data ?? r.data);
@@ -308,18 +318,22 @@ export interface LeaderboardEntry {
   user_id: number;
   username: string;
   full_name: string;
+  first_name: string;
+  last_name: string;
   region: string;
-  total_score: number;
-  avg_percentage: number;
-  attempts_count: number;
+  score: number;
+  correct: number;
+  total: number;
+  percentage: number;
   medal: string;
 }
 
 export interface MyRankInfo {
   rank: number;
-  total_score: number;
-  avg_percentage: number;
-  attempts_count: number;
+  score: number;
+  correct: number;
+  total: number;
+  percentage: number;
   total_participants: number;
 }
 
@@ -437,7 +451,11 @@ export async function listNews(params?: { page?: number; page_size?: number; typ
   if (params?.page_size) query.set('page_size', String(params.page_size));
   if (params?.type) query.set('type', params.type);
   const res = await api.get(`/user/news?${query}`);
-  return res.data.data;
+  const d = res.data.data;
+  // Pagination response: {data: [...], total, page} yoki to'g'ridan-to'g'ri array
+  if (d && Array.isArray(d.data)) return d.data;
+  if (Array.isArray(d)) return d;
+  return [];
 }
 
 export async function getNewsDetail(id: number | string) {
@@ -453,19 +471,40 @@ export const listCertificates = (): Promise<Certificate[]> =>
 export const getCertificate = (id: number): Promise<Certificate> =>
   api.get(`/user/certificates/${id}`).then((r) => r.data.data ?? r.data);
 
-// ─── Feedback ────────────────────────────────────────────────────────────────
+export const downloadMyCertificatePDF = async (id: number) => {
+  const res = await api.get(`/user/certificates/${id}/download`, {
+    responseType: "blob",
+  });
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", `certificate_${id}.pdf`);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
 
-export async function createFeedback(category: string, subject: string, message: string) {
-  const res = await api.post('/user/feedback', { category, subject, message });
-  return res.data.data;
+// ─── AI Analysis ──────────────────────────────────────────────────────────────
+
+export interface AIQuestionReview {
+  question_num: number;
+  question_text: string;
+  your_answer: string;
+  correct_answer: string;
+  explanation: string;
 }
 
-export async function listFeedbacks() {
-  const res = await api.get('/user/feedback');
-  return res.data.data;
+export interface AIAnalysisResult {
+  overall_grade: string;
+  summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  question_analysis: AIQuestionReview[];
+  recommendations: string[];
+  motivation: string;
 }
 
-export async function getFeedback(id: number) {
-  const res = await api.get(`/user/feedback/${id}`);
-  return res.data.data;
-}
+export const getAIAnalysis = (attemptId: number): Promise<AIAnalysisResult> =>
+  api.get(`/user/exams/mock-tests/attempts/${attemptId}/ai-analysis`).then((r) => r.data.data ?? r.data);
+

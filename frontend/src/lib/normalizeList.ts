@@ -19,6 +19,8 @@ export function normalizeList<T = any>(data: unknown): T[] {
       const inner = obj.data as Record<string, unknown>;
       if (Array.isArray(inner.data)) return inner.data as T[];
       if (Array.isArray(inner.items)) return inner.items as T[];
+      if (Array.isArray(inner.messages)) return inner.messages as T[];
+      if (Array.isArray(inner.logs)) return inner.logs as T[];
     }
   }
   return [];

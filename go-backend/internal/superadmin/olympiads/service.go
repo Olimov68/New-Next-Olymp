@@ -57,6 +57,22 @@ func (s *Service) Create(req *CreateRequest, staffID uint) (*models.Olympiad, er
 		IsPaid:         req.IsPaid,
 		Price:          req.Price,
 		CreatedByID:    &staffID,
+
+		BannerURL: req.BannerURL,
+		IconURL:   req.IconURL,
+		MaxSeats:  req.MaxSeats,
+
+		ShuffleQuestions:      req.ShuffleQuestions,
+		ShuffleAnswers:        req.ShuffleAnswers,
+		AutoSubmit:            req.AutoSubmit,
+		AllowRetake:           req.AllowRetake,
+		ShowResultImmediately: req.ShowResultImmediately,
+		GiveCertificate:       req.GiveCertificate,
+		ManualReview:          req.ManualReview,
+		AdminApproval:         req.AdminApproval,
+
+		MinScoreForCertificate: req.MinScoreForCertificate,
+		ScoringRules:           req.ScoringRules,
 	}
 
 	if req.StartTime != nil {
@@ -69,6 +85,18 @@ func (s *Service) Create(req *CreateRequest, staffID uint) (*models.Olympiad, er
 		t, err := time.Parse(time.RFC3339, *req.EndTime)
 		if err == nil {
 			o.EndTime = &t
+		}
+	}
+	if req.RegistrationStartTime != nil {
+		t, err := time.Parse(time.RFC3339, *req.RegistrationStartTime)
+		if err == nil {
+			o.RegistrationStartTime = &t
+		}
+	}
+	if req.RegistrationEndTime != nil {
+		t, err := time.Parse(time.RFC3339, *req.RegistrationEndTime)
+		if err == nil {
+			o.RegistrationEndTime = &t
 		}
 	}
 
@@ -126,6 +154,63 @@ func (s *Service) Update(id uint, req *UpdateRequest) (*models.Olympiad, error) 
 		}
 	}
 
+	// Media
+	if req.BannerURL != nil {
+		fields["banner_url"] = *req.BannerURL
+	}
+	if req.IconURL != nil {
+		fields["icon_url"] = *req.IconURL
+	}
+
+	// Registration
+	if req.RegistrationStartTime != nil {
+		t, err := time.Parse(time.RFC3339, *req.RegistrationStartTime)
+		if err == nil {
+			fields["registration_start_time"] = t
+		}
+	}
+	if req.RegistrationEndTime != nil {
+		t, err := time.Parse(time.RFC3339, *req.RegistrationEndTime)
+		if err == nil {
+			fields["registration_end_time"] = t
+		}
+	}
+	if req.MaxSeats != nil {
+		fields["max_seats"] = *req.MaxSeats
+	}
+
+	// Settings
+	if req.ShuffleQuestions != nil {
+		fields["shuffle_questions"] = *req.ShuffleQuestions
+	}
+	if req.ShuffleAnswers != nil {
+		fields["shuffle_answers"] = *req.ShuffleAnswers
+	}
+	if req.AutoSubmit != nil {
+		fields["auto_submit"] = *req.AutoSubmit
+	}
+	if req.AllowRetake != nil {
+		fields["allow_retake"] = *req.AllowRetake
+	}
+	if req.ShowResultImmediately != nil {
+		fields["show_result_immediately"] = *req.ShowResultImmediately
+	}
+	if req.GiveCertificate != nil {
+		fields["give_certificate"] = *req.GiveCertificate
+	}
+	if req.ManualReview != nil {
+		fields["manual_review"] = *req.ManualReview
+	}
+	if req.AdminApproval != nil {
+		fields["admin_approval"] = *req.AdminApproval
+	}
+	if req.MinScoreForCertificate != nil {
+		fields["min_score_for_certificate"] = *req.MinScoreForCertificate
+	}
+	if req.ScoringRules != nil {
+		fields["scoring_rules"] = *req.ScoringRules
+	}
+
 	if err := s.repo.Update(id, fields); err != nil {
 		return nil, err
 	}
@@ -134,6 +219,56 @@ func (s *Service) Update(id uint, req *UpdateRequest) (*models.Olympiad, error) 
 
 func (s *Service) Delete(id uint) error {
 	return s.repo.Delete(id)
+}
+
+// ListRegistrations returns paginated registrations for an olympiad
+func (s *Service) ListRegistrations(olympiadID uint, page, pageSize int) ([]models.OlympiadRegistration, int64, error) {
+	return s.repo.ListRegistrations(olympiadID, nil, page, pageSize)
+}
+
+// ListParticipants returns registrations with status participant or completed
+func (s *Service) ListParticipants(olympiadID uint, page, pageSize int) ([]models.OlympiadRegistration, int64, error) {
+	return s.repo.ListRegistrations(olympiadID, []string{"participant", "completed"}, page, pageSize)
+}
+
+// ListResults returns paginated attempt results for an olympiad
+func (s *Service) ListResults(olympiadID uint, page, pageSize int) ([]models.OlympiadAttempt, int64, error) {
+	return s.repo.ListAttempts(olympiadID, page, pageSize)
+}
+
+// ApproveResult sets the attempt status to approved
+func (s *Service) ApproveResult(resultID uint) error {
+	return s.repo.UpdateAttempt(resultID, map[string]interface{}{"status": "approved"})
+}
+
+// Duplicate clones an olympiad with a new slug and draft status
+func (s *Service) Duplicate(id uint) (*models.Olympiad, error) {
+	src, err := s.repo.GetByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	dup := *src
+	dup.ID = 0
+	dup.Slug = fmt.Sprintf("%s-copy-%d", src.Slug, time.Now().Unix())
+	dup.Status = models.OlympiadStatusDraft
+	dup.CreatedAt = time.Time{}
+	dup.UpdatedAt = time.Time{}
+
+	if err := s.repo.Create(&dup); err != nil {
+		return nil, err
+	}
+	return &dup, nil
+}
+
+// Publish sets the olympiad status to published
+func (s *Service) Publish(id uint) error {
+	return s.repo.UpdateStatus(id, string(models.OlympiadStatusPublished))
+}
+
+// Unpublish sets the olympiad status to draft
+func (s *Service) Unpublish(id uint) error {
+	return s.repo.UpdateStatus(id, string(models.OlympiadStatusDraft))
 }
 
 func generateSlug(title string) string {

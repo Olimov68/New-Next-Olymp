@@ -62,22 +62,27 @@ func (h *Handler) List(c *gin.Context) {
 
 	status := c.Query("status")
 	search := c.Query("search")
+	region := c.Query("region")
 
 	var list []models.User
 	var total int64
 	q := h.db.Model(&models.User{})
 	if status != "" {
-		q = q.Where("status = ?", status)
+		q = q.Where("\"user\".status = ?", status)
 	} else {
-		q = q.Where("status != ?", "deleted")
+		q = q.Where("\"user\".status != ?", "deleted")
 	}
 	if search != "" {
-		q = q.Where("username ILIKE ?", "%"+search+"%")
+		q = q.Where("\"user\".username ILIKE ?", "%"+search+"%")
+	}
+	if region != "" {
+		q = q.Joins("JOIN profile ON profile.user_id = \"user\".id").
+			Where("profile.region = ?", region)
 	}
 
 	q.Count(&total)
 	offset := (page - 1) * pageSize
-	q.Preload("Profile").Order("created_at DESC").Offset(offset).Limit(pageSize).Find(&list)
+	q.Preload("Profile").Order("\"user\".created_at DESC").Offset(offset).Limit(pageSize).Find(&list)
 
 	// Flatten profile data for frontend
 	items := make([]UserListItem, len(list))
@@ -243,12 +248,38 @@ func (h *Handler) Delete(c *gin.Context) {
 
 	// Bog'liq ma'lumotlarni o'chirish (foreign key constraints)
 	tx := h.db.Begin()
-	tx.Where("user_id = ?", id).Delete(&models.Session{})
-	tx.Where("user_id = ?", id).Delete(&models.TelegramLink{})
-	tx.Where("user_id = ?", id).Delete(&models.Profile{})
-	tx.Where("user_id = ?", id).Delete(&models.PromoCodeUsage{})
-	tx.Where("user_id = ?", id).Delete(&models.Notification{})
-	tx.Delete(&user)
+
+	// Barcha bog'liq jadvallarni raw SQL bilan o'chirish
+	tables := []string{
+		"session", "telegram_link",
+		"profile",
+		"chat_messages", "chat_bans",
+		"discussion_message", "discussion_user_state",
+		"notification", "notification_preference",
+		"promo_code_usage", "balance", "balance_transaction", "payment",
+		"certificate",
+		"ai_analysis",
+		"feedback",
+		"exam_violation",
+		"user_verifications",
+	}
+	for _, t := range tables {
+		tx.Exec("DELETE FROM \""+t+"\" WHERE user_id = ?", id)
+	}
+
+	// Olimpiada urinishlari (child -> parent)
+	tx.Exec("DELETE FROM olympiad_attempt_answer WHERE attempt_id IN (SELECT id FROM olympiad_attempt WHERE user_id = ?)", id)
+	tx.Exec("DELETE FROM anti_cheat_violations WHERE user_id = ?", id)
+	tx.Exec("DELETE FROM olympiad_attempt WHERE user_id = ?", id)
+	tx.Exec("DELETE FROM olympiad_registration WHERE user_id = ?", id)
+
+	// Mock test urinishlari (child -> parent)
+	tx.Exec("DELETE FROM mock_attempt_answer WHERE attempt_id IN (SELECT id FROM mock_attempt WHERE user_id = ?)", id)
+	tx.Exec("DELETE FROM mock_attempt WHERE user_id = ?", id)
+	tx.Exec("DELETE FROM mock_test_registration WHERE user_id = ?", id)
+
+	// User o'zi
+	tx.Exec("DELETE FROM \"user\" WHERE id = ?", id)
 
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()

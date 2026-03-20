@@ -104,25 +104,44 @@ export async function uploadPanelImage(file: File): Promise<string> {
 }
 
 // ============================================
-// Feedback
+// Chat Moderation
 // ============================================
-export async function getAdminFeedbacks(params?: { page?: number; limit?: number }) {
-  const query = new URLSearchParams();
-  if (params?.page) query.set('page', String(params.page));
-  if (params?.limit) query.set('limit', String(params.limit));
-  const res = await adminApi.get(`/admin/feedback?${query}`);
-  return res.data.data;
-}
+export const getAdminChatMessages = (params?: Record<string, unknown>) =>
+  get("/chat/messages", params);
+export const deleteAdminChatMessage = (id: number) =>
+  del(`/chat/messages/${id}`);
+export const banChatUser = (userId: number, data: { reason?: string; type?: string; duration?: number }) =>
+  post(`/chat/ban/${userId}`, data);
+export const unbanChatUser = (userId: number) =>
+  post(`/chat/unban/${userId}`);
+export const toggleChat = (data: { is_open: boolean }) =>
+  post("/chat/toggle", data);
+export const getChatBans = () =>
+  get("/chat/bans");
+export const getChatOnline = () =>
+  get("/chat/online");
+export const getChatSettings = () =>
+  get("/chat/settings");
+export const updateChatSettings = (data: Record<string, unknown>) =>
+  put("/chat/settings", data);
+export const getChatModerationLogs = (params?: Record<string, unknown>) =>
+  get("/chat/moderation-logs", params);
 
-export async function getAdminFeedback(id: number) {
-  const res = await adminApi.get(`/admin/feedback/${id}`);
-  return res.data.data;
-}
+// ============================================
+// Permissions
+// ============================================
+// ============================================
+// Verifications
+// ============================================
+export const getVerifications = (params?: Record<string, unknown>) => get("/verifications", params);
+export const getVerification = (id: number) => get(`/verifications/${id}`);
+export const approveVerification = (id: number, data?: { note?: string }) => post(`/verifications/${id}/approve`, data);
+export const rejectVerification = (id: number, data: { reason: string }) => post(`/verifications/${id}/reject`, data);
 
-export async function replyAdminFeedback(id: number, data: { reply: string; status?: string }) {
-  const res = await adminApi.put(`/admin/feedback/${id}/reply`, data);
-  return res.data.data;
-}
+export const approveUserVerification = (userId: number, note?: string) =>
+  post(`/verifications/user/${userId}/approve`, { note });
+export const rejectUserVerification = (userId: number, reason: string) =>
+  post(`/verifications/user/${userId}/reject`, { reason });
 
 // ============================================
 // Permissions

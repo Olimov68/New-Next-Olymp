@@ -2,6 +2,8 @@ package usercertificates
 
 import (
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -9,11 +11,12 @@ import (
 )
 
 type Handler struct {
-	service *Service
+	service   *Service
+	uploadDir string
 }
 
-func NewHandler(service *Service) *Handler {
-	return &Handler{service: service}
+func NewHandler(service *Service, uploadDir string) *Handler {
+	return &Handler{service: service, uploadDir: uploadDir}
 }
 
 // List — mening sertifikatlarim
@@ -48,4 +51,45 @@ func (h *Handler) GetByID(c *gin.Context) {
 	}
 
 	response.Success(c, http.StatusOK, "Certificate detail", result)
+}
+
+// Download — sertifikat PDFni yuklab olish
+// GET /api/v1/user/certificates/:id/download
+func (h *Handler) Download(c *gin.Context) {
+	userID, _ := c.Get("userID")
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid ID", nil)
+		return
+	}
+
+	cert, err := h.service.repo.GetByID(uint(id), userID.(uint))
+	if err != nil {
+		response.NotFound(c, "Sertifikat topilmadi")
+		return
+	}
+
+	if cert.Status == "revoked" {
+		response.Error(c, http.StatusForbidden, "Sertifikat bekor qilingan", nil)
+		return
+	}
+
+	pdfPath := cert.PDFURL
+	if pdfPath == "" {
+		pdfPath = cert.FileURL
+	}
+	if pdfPath == "" {
+		response.Error(c, http.StatusNotFound, "PDF fayl topilmadi", nil)
+		return
+	}
+
+	fullPath := filepath.Join(h.uploadDir, filepath.Clean(pdfPath[len("/uploads"):]))
+	if _, err := os.Stat(fullPath); err != nil {
+		response.Error(c, http.StatusNotFound, "PDF fayl mavjud emas", nil)
+		return
+	}
+
+	c.Header("Content-Disposition", "attachment; filename="+cert.CertificateNumber+".pdf")
+	c.File(fullPath)
 }

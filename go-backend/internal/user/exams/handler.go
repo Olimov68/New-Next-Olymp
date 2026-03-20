@@ -3,6 +3,7 @@ package exams
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"time"
@@ -82,6 +83,24 @@ func (h *Handler) StartMockTest(c *gin.Context) {
 		return
 	}
 
+	// Savollarni aralashtirish
+	if mockTest.ShuffleQuestions {
+		rand.Shuffle(len(questions), func(i, j int) {
+			questions[i], questions[j] = questions[j], questions[i]
+		})
+	}
+
+	// Javob variantlarini aralashtirish
+	if mockTest.ShuffleAnswers {
+		for i := range questions {
+			opts := questions[i].Options
+			rand.Shuffle(len(opts), func(a, b int) {
+				opts[a], opts[b] = opts[b], opts[a]
+			})
+			questions[i].Options = opts
+		}
+	}
+
 	// Yangi urinish yaratish
 	attempt := models.MockAttempt{
 		UserID:     userID,
@@ -96,12 +115,16 @@ func (h *Handler) StartMockTest(c *gin.Context) {
 	safeQuestions := h.hideCorrectAnswers(questions)
 
 	response.Success(c, http.StatusCreated, "Test boshlandi", gin.H{
-		"attempt_id":    attempt.ID,
-		"questions":     safeQuestions,
-		"total":         len(questions),
-		"duration_mins": mockTest.DurationMins,
-		"started_at":    attempt.StartedAt,
-		"ends_at":       attempt.StartedAt.Add(time.Duration(mockTest.DurationMins) * time.Minute),
+		"attempt_id":              attempt.ID,
+		"questions":               safeQuestions,
+		"total":                   len(questions),
+		"duration_mins":           mockTest.DurationMins,
+		"started_at":              attempt.StartedAt,
+		"ends_at":                 attempt.StartedAt.Add(time.Duration(mockTest.DurationMins) * time.Minute),
+		"auto_submit":             mockTest.AutoSubmit,
+		"show_result_immediately": mockTest.ShowResultImmediately,
+		"shuffle_questions":       mockTest.ShuffleQuestions,
+		"shuffle_answers":         mockTest.ShuffleAnswers,
 	})
 }
 
@@ -194,6 +217,19 @@ func (h *Handler) FinishMockTest(c *gin.Context) {
 	}
 
 	result := h.finishMockAttempt(&attempt)
+
+	// ShowResultImmediately tekshirish
+	var mt models.MockTest
+	h.db.First(&mt, attempt.MockTestID)
+	if !mt.ShowResultImmediately {
+		response.Success(c, http.StatusOK, "Test yakunlandi", gin.H{
+			"attempt_id": attempt.ID,
+			"status":     attempt.Status,
+			"message":    "Natijalar admin tomonidan tasdiqlanadi",
+		})
+		return
+	}
+
 	response.Success(c, http.StatusOK, "Test yakunlandi", result)
 }
 
@@ -348,6 +384,24 @@ func (h *Handler) StartOlympiad(c *gin.Context) {
 		return
 	}
 
+	// Savollarni aralashtirish
+	if olympiad.ShuffleQuestions {
+		rand.Shuffle(len(questions), func(i, j int) {
+			questions[i], questions[j] = questions[j], questions[i]
+		})
+	}
+
+	// Javob variantlarini aralashtirish
+	if olympiad.ShuffleAnswers {
+		for i := range questions {
+			opts := questions[i].Options
+			rand.Shuffle(len(opts), func(a, b int) {
+				opts[a], opts[b] = opts[b], opts[a]
+			})
+			questions[i].Options = opts
+		}
+	}
+
 	attempt := models.OlympiadAttempt{
 		UserID:     userID,
 		OlympiadID: uint(olympiadID),
@@ -363,12 +417,16 @@ func (h *Handler) StartOlympiad(c *gin.Context) {
 	safeQuestions := h.hideCorrectAnswers(questions)
 
 	response.Success(c, http.StatusCreated, "Olimpiada boshlandi", gin.H{
-		"attempt_id":    attempt.ID,
-		"questions":     safeQuestions,
-		"total":         len(questions),
-		"duration_mins": olympiad.DurationMins,
-		"started_at":    attempt.StartedAt,
-		"ends_at":       attempt.StartedAt.Add(time.Duration(olympiad.DurationMins) * time.Minute),
+		"attempt_id":              attempt.ID,
+		"questions":               safeQuestions,
+		"total":                   len(questions),
+		"duration_mins":           olympiad.DurationMins,
+		"started_at":              attempt.StartedAt,
+		"ends_at":                 attempt.StartedAt.Add(time.Duration(olympiad.DurationMins) * time.Minute),
+		"auto_submit":             olympiad.AutoSubmit,
+		"show_result_immediately": olympiad.ShowResultImmediately,
+		"shuffle_questions":       olympiad.ShuffleQuestions,
+		"shuffle_answers":         olympiad.ShuffleAnswers,
 	})
 }
 
@@ -452,6 +510,19 @@ func (h *Handler) FinishOlympiad(c *gin.Context) {
 	}
 
 	result := h.finishOlympiadAttempt(&attempt)
+
+	// ShowResultImmediately tekshirish
+	var olympiad models.Olympiad
+	h.db.First(&olympiad, attempt.OlympiadID)
+	if !olympiad.ShowResultImmediately {
+		response.Success(c, http.StatusOK, "Olimpiada yakunlandi", gin.H{
+			"attempt_id": attempt.ID,
+			"status":     attempt.Status,
+			"message":    "Natijalar admin tomonidan tasdiqlanadi",
+		})
+		return
+	}
+
 	response.Success(c, http.StatusOK, "Olimpiada yakunlandi", result)
 }
 

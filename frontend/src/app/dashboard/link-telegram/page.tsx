@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { verifyTelegramCode } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { verifyTelegramCode, api } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,20 @@ export default function LinkTelegramPage() {
   const [loading, setLoading] = useState(false);
   const [linked, setLinked] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get("/profile/verification-status");
+        const data = res.data?.data || res.data;
+        if (data?.is_telegram_linked) {
+          refreshUser();
+          router.push("/dashboard");
+        }
+      } catch {}
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleVerify = async () => {
     if (code.length !== 6) {
@@ -126,6 +140,17 @@ export default function LinkTelegramPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Fallback: admin verification */}
+      <div className="mt-8">
+        <div className="border-t border-border my-6" />
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Telegram bot ishlamayaptimi?
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Xavotir olmang! Akkauntingiz admin tomonidan tasdiqlanishi uchun ariza yuborilgan. Admin tasdiqlagandan keyin barcha funksiyalar ochiladi.
+        </p>
+      </div>
     </div>
   );
 }

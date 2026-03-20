@@ -20,9 +20,10 @@ type DashboardStats struct {
 	TotalUsers       int64 `json:"total_users"`
 	TotalOlympiads   int64 `json:"total_olympiads"`
 	TotalMockTests   int64 `json:"total_mock_tests"`
-	TotalFeedbacks   int64 `json:"total_feedbacks"`
-	OpenFeedbacks    int64 `json:"open_feedbacks"`
-	TotalCertificates int64 `json:"total_certificates"`
+	TotalChatMessages int64 `json:"total_chat_messages"`
+	ActiveChatBans    int64 `json:"active_chat_bans"`
+	TotalCertificates    int64 `json:"total_certificates"`
+	PendingVerifications int64 `json:"pending_verifications"`
 }
 
 // Stats — admin dashboard statistikasi
@@ -32,9 +33,10 @@ func (h *Handler) Stats(c *gin.Context) {
 	h.db.Raw("SELECT COUNT(*) FROM users WHERE status != 'deleted'").Scan(&stats.TotalUsers)
 	h.db.Raw("SELECT COUNT(*) FROM olympiads").Scan(&stats.TotalOlympiads)
 	h.db.Raw("SELECT COUNT(*) FROM mock_tests").Scan(&stats.TotalMockTests)
-	h.db.Raw("SELECT COUNT(*) FROM feedbacks").Scan(&stats.TotalFeedbacks)
-	h.db.Raw("SELECT COUNT(*) FROM feedbacks WHERE status = 'open'").Scan(&stats.OpenFeedbacks)
+	h.db.Raw("SELECT COUNT(*) FROM chat_messages WHERE is_deleted = false").Scan(&stats.TotalChatMessages)
+	h.db.Raw("SELECT COUNT(*) FROM chat_bans WHERE is_active = true").Scan(&stats.ActiveChatBans)
 	h.db.Raw("SELECT COUNT(*) FROM certificates").Scan(&stats.TotalCertificates)
+	h.db.Raw("SELECT COUNT(*) FROM user_verifications WHERE status = 'pending'").Scan(&stats.PendingVerifications)
 
 	response.Success(c, http.StatusOK, "Dashboard stats", stats)
 }

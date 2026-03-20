@@ -75,6 +75,14 @@ func (s *Service) CompleteProfile(userID uint, req *CompleteProfileRequest, phot
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 
+	// Auto-create a pending verification record
+	verification := &models.UserVerification{
+		UserID: userID,
+		Method: "telegram",
+		Status: "pending",
+	}
+	s.repo.db.Create(verification)
+
 	return profile, nil
 }
 

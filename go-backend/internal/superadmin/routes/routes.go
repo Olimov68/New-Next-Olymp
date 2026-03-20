@@ -2,16 +2,22 @@ package saroutes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/nextolympservice/go-backend/config"
 	"github.com/nextolympservice/go-backend/internal/middleware"
 	"github.com/nextolympservice/go-backend/internal/utils"
 	"gorm.io/gorm"
 
+	"github.com/nextolympservice/go-backend/internal/certgen"
+	"github.com/nextolympservice/go-backend/internal/chat"
+
+	adminverifications "github.com/nextolympservice/go-backend/internal/admin/verifications"
+
+	panelupload "github.com/nextolympservice/go-backend/internal/panel/upload"
 	saadmins "github.com/nextolympservice/go-backend/internal/superadmin/admins"
 	saaudit "github.com/nextolympservice/go-backend/internal/superadmin/audit"
 	sacerts "github.com/nextolympservice/go-backend/internal/superadmin/certificates"
 	sadashboard "github.com/nextolympservice/go-backend/internal/superadmin/dashboard"
-	safeedback "github.com/nextolympservice/go-backend/internal/superadmin/feedback"
-	samocktests "github.com/nextolympservice/go-backend/internal/superadmin/mocktests"
+samocktests "github.com/nextolympservice/go-backend/internal/superadmin/mocktests"
 	sanews "github.com/nextolympservice/go-backend/internal/superadmin/news"
 	saolympiads "github.com/nextolympservice/go-backend/internal/superadmin/olympiads"
 	sapayments "github.com/nextolympservice/go-backend/internal/superadmin/payments"
@@ -20,13 +26,14 @@ import (
 	saquestions "github.com/nextolympservice/go-backend/internal/superadmin/questions"
 	saresults "github.com/nextolympservice/go-backend/internal/superadmin/results"
 	sasecurity "github.com/nextolympservice/go-backend/internal/superadmin/security"
+	saanticheat "github.com/nextolympservice/go-backend/internal/superadmin/anticheat"
 	sasettings "github.com/nextolympservice/go-backend/internal/superadmin/settings"
 	satemplates "github.com/nextolympservice/go-backend/internal/superadmin/templates"
 	sausers "github.com/nextolympservice/go-backend/internal/superadmin/users"
 )
 
 // Register — superadmin routelarni ro'yxatdan o'tkazadi
-func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB) {
+func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB, cfg *config.Config, chatHandler *chat.Handler) {
 	// Handlers
 	dashHandler := sadashboard.NewHandler(db)
 	adminsHandler := saadmins.NewHandler(db)
@@ -36,15 +43,23 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 	questionsHandler := saquestions.NewHandler(db)
 	resultsHandler := saresults.NewHandler(db)
 	newsHandler := sanews.NewHandler(db)
-	certsHandler := sacerts.NewHandler(db)
+	certGenerator := certgen.NewCertGenerator(
+		cfg.Upload.Dir,
+		"https://nextolymp.uz/verify-certificate",
+		"assets/fonts",
+		db,
+	)
+	certsHandler := sacerts.NewHandler(db, certGenerator, cfg.Upload.Dir)
 	templatesHandler := satemplates.NewHandler(db)
-	feedbackHandler := safeedback.NewHandler(db)
-	paymentsHandler := sapayments.NewHandler(db)
+paymentsHandler := sapayments.NewHandler(db)
 	permsHandler := saperms.NewHandler(db)
 	securityHandler := sasecurity.NewHandler(db)
 	auditHandler := saaudit.NewHandler(db)
 	settingsHandler := sasettings.NewHandler(db)
 	promosHandler := sapromos.NewHandler(db)
+	anticheatHandler := saanticheat.NewHandler(db)
+	verificationsHandler := adminverifications.NewHandler(db)
+	uploadHandler := panelupload.NewHandler(cfg)
 
 	// Superadmin group
 	sa := api.Group("/superadmin")
@@ -86,6 +101,15 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 			oG.GET("/:id", olympiadsHandler.GetByID)
 			oG.PUT("/:id", olympiadsHandler.Update)
 			oG.DELETE("/:id", olympiadsHandler.Delete)
+
+			// Sub-resource endpoints
+			oG.GET("/:id/registrations", olympiadsHandler.ListRegistrations)
+			oG.GET("/:id/participants", olympiadsHandler.ListParticipants)
+			oG.GET("/:id/results", olympiadsHandler.ListResults)
+			oG.POST("/:id/results/:result_id/approve", olympiadsHandler.ApproveResult)
+			oG.POST("/:id/duplicate", olympiadsHandler.Duplicate)
+			oG.PATCH("/:id/publish", olympiadsHandler.Publish)
+			oG.PATCH("/:id/unpublish", olympiadsHandler.Unpublish)
 		}
 
 		// Mock tests management
@@ -96,6 +120,15 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 			mG.GET("/:id", mockTestsHandler.GetByID)
 			mG.PUT("/:id", mockTestsHandler.Update)
 			mG.DELETE("/:id", mockTestsHandler.Delete)
+
+			// Sub-resource endpoints
+			mG.GET("/:id/registrations", mockTestsHandler.ListRegistrations)
+			mG.GET("/:id/participants", mockTestsHandler.ListParticipants)
+			mG.GET("/:id/results", mockTestsHandler.ListResults)
+			mG.POST("/:id/results/:result_id/approve", mockTestsHandler.ApproveResult)
+			mG.POST("/:id/duplicate", mockTestsHandler.Duplicate)
+			mG.PATCH("/:id/publish", mockTestsHandler.Publish)
+			mG.PATCH("/:id/unpublish", mockTestsHandler.Unpublish)
 		}
 
 		// Questions management
@@ -135,6 +168,9 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 			cG.POST("", certsHandler.Create)
 			cG.GET("/:id", certsHandler.GetByID)
 			cG.PUT("/:id", certsHandler.Update)
+			cG.POST("/:id/regenerate", certsHandler.Regenerate)
+			cG.POST("/:id/revoke", certsHandler.Revoke)
+			cG.GET("/:id/download", certsHandler.Download)
 		}
 
 		// Certificate templates
@@ -145,14 +181,6 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 			tG.GET("/:id", templatesHandler.GetByID)
 			tG.PUT("/:id", templatesHandler.Update)
 			tG.DELETE("/:id", templatesHandler.Delete)
-		}
-
-		// Feedback management
-		fG := sa.Group("/feedback")
-		{
-			fG.GET("", feedbackHandler.List)
-			fG.GET("/:id", feedbackHandler.GetByID)
-			fG.PUT("/:id/reply", feedbackHandler.Reply)
 		}
 
 		// Payments management (promo-codes ham shu ichida)
@@ -204,6 +232,43 @@ func Register(api *gin.RouterGroup, panelJWT *utils.PanelJWTManager, db *gorm.DB
 		{
 			sG.GET("", settingsHandler.GetAll)
 			sG.PUT("", settingsHandler.Update)
+		}
+
+		// Verifications
+		vG := sa.Group("/verifications")
+		{
+			vG.GET("", verificationsHandler.List)
+			vG.GET("/:id", verificationsHandler.GetByID)
+			vG.POST("/:id/approve", verificationsHandler.Approve)
+			vG.POST("/:id/reject", verificationsHandler.Reject)
+			vG.POST("/user/:user_id/approve", verificationsHandler.ApproveByUserID)
+			vG.POST("/user/:user_id/reject", verificationsHandler.RejectByUserID)
+		}
+
+		// Upload
+		sa.POST("/upload/image", uploadHandler.UploadImage)
+
+		// Anti-cheat violations
+		acG := sa.Group("/anticheat")
+		{
+			acG.GET("/violations", anticheatHandler.List)
+			acG.GET("/violations/stats", anticheatHandler.Stats)
+		}
+
+		// Chat moderation
+		chatG := sa.Group("/chat")
+		{
+			chatG.GET("/messages", chatHandler.GetMessages)
+			chatG.POST("/messages", chatHandler.AdminSendMessage)
+			chatG.DELETE("/messages/:id", chatHandler.AdminDeleteMessage)
+			chatG.POST("/ban/:user_id", chatHandler.AdminBanUser)
+			chatG.POST("/unban/:user_id", chatHandler.AdminUnbanUser)
+			chatG.POST("/toggle", chatHandler.AdminToggleChat)
+			chatG.GET("/bans", chatHandler.AdminGetBannedUsers)
+			chatG.GET("/online", chatHandler.GetOnlineCount)
+			chatG.GET("/settings", chatHandler.AdminGetSettings)
+			chatG.PUT("/settings", chatHandler.AdminUpdateSettings)
+			chatG.GET("/moderation-logs", chatHandler.AdminGetModerationLogs)
 		}
 	}
 }
